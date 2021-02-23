@@ -1,0 +1,70 @@
+DROP TABLE IF EXISTS author_doi;
+DROP TABLE IF EXISTS article_info;
+DROP TABLE IF EXISTS journal;
+DROP TABLE IF EXISTS post;
+
+
+
+CREATE TABLE IF NOT EXISTS email_address (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  password TEXT NOT NULL,
+  active BOOLEAN NOT NULL
+);
+
+CREATE TABLE author_doi (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_name TEXT NOT NULL,
+  author_affiliation TEXT NOT NULL,
+  doi TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_doi (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  automated BOOLEAN DEFAULT 1 NOT NULL,
+  doi TEXT NOT NULL
+);
+
+DELETE FROM email_doi WHERE automated = 1;
+
+CREATE TABLE article_info (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pmid TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  journal_name TEXT NOT NULL,
+  doi TEXT NOT NULL,
+  pub_date DATE
+);
+
+CREATE TABLE If NOT EXISTS email_url (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  url_param_id TEXT UNIQUE NOT NULL,
+  doi TEXT NOT NULL,
+  revision INTEGER NOT NULL,
+  completed_timestamp DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS paper_path (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  step INTEGER NOT NULL,
+  submission_date DATE NOT NULL,
+  journal TEXT NOT NULL,
+  url_param_id TEXT NOT NULL,
+  FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)
+);
+
+CREATE TABLE journal (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  journal_name TEXT NOT NULL
+);
+
+CREATE TABLE post (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  author_id INTEGER NOT NULL,
+  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  FOREIGN KEY (author_id) REFERENCES user (id)
+);

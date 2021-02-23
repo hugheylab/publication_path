@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Register{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="doi">Please enter DOI of paper you wish to register:</label>
+    <input name="doi" autofocus="TRUE" id="doi" required>
+    <input type="submit" value="Register">
+  </form>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Please confirm this is the correct paper!{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <h3>Article Information</h3>
+    <b>Title:&nbsp;</b>{{ article.title }}<br/>
+    <b>DOI:&nbsp;</b>{{ article.doi }}<br/>
+    <b>Publication Date:&nbsp;</b>{{ article.pub_date }}<br/>
+    <b>Authors:</b><br/>
+    {% for author in authors %}
+        {{author['author_name']}}&nbsp;-&nbsp;{{author['author_affiliation']}}<br/>
+    {% endfor %}<br/><br/>
+    <h3>Please select the emails to send path entry URLs to:</h3>
+    {% for email in emails %}
+        <input type="checkbox" name="{{email['email']}}" id="{{email['email']}}" />{{email['email']}}<br/>
+    {% endfor %}
+    <br/><input type="submit" value="Confirm">
+  </form>
+{% endblock %}
