@@ -4,6 +4,7 @@ from google.cloud import bigquery
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+import time
 
 
 def get_db():
@@ -40,12 +41,15 @@ def get_bq_authors_and_emails():
         'author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos '
         'left join pmdb-bq.pmdb.article_id as article_id on author_affiliation.pmid = article_id.pmid '
         'where article_id.id_type = "doi";')
+    bqStart = time.time()
     query_job = client.query(query)  # API request
     rows = query_job.result()  # Waits for query to finish
+    bqEnd = time.time()
     queryA = 'INSERT INTO author_doi(author_name, author_affiliation, doi) VALUES(?,?,?)'
     queryE = 'INSERT INTO email_doi(email, doi) VALUES(?,?)'
     db = get_db()
     cur = db.cursor()
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(?,?,?,?)', ('bigquery get authors and emails', str(bqStart), str(bqEnd), str(bqEnd - bqStart)))
     emailDoiList = []
     for row in rows:
         cur.execute(queryA, (row.author_name, row.affiliation, row.doi,))
