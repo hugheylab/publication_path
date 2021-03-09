@@ -1,4 +1,5 @@
 import functools
+import re
 
 from datetime import datetime
 
@@ -16,7 +17,27 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def register():
 
     if request.method == 'POST':
+        db = get_db()
+        error = None
         doi = request.form['doi']
+        email = ''
+        if len(re.findall('[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]+', doi)) > 0:
+            email = str(doi)
+            print('Email: ' + email)
+
+            emails = db.execute(
+                'SELECT * FROM email_doi WHERE email = ?', (email,)
+            ).fetchall()
+
+            print(str(emails))
+
+            if len(emails) == 0:
+                error = "No articles found associated to supplied email. Please search for a different email or a specific article."
+                flash(error)
+                return render_template('auth/register.html')
+            else:
+                return redirect(url_for('auth.confirm', doi = doi, email = email))
+
         if 'doi.org' in doi:
             doi = doi.replace('http://www.', '')
             doi = doi.replace('https://www.', '')
@@ -25,8 +46,6 @@ def register():
             doi = doi.replace('www.doi.org/', '')
             doi = doi.replace('doi.org/', '')
 
-        db = get_db()
-        error = None
 
         article = db.execute(
             'SELECT * FROM article_info WHERE doi = ?', (doi,)
@@ -57,7 +76,7 @@ def register():
                 error = 'No authors found for selected DOI.'
 
             if error is None:
-                return redirect(url_for('auth.confirm', doi = doi))
+                return redirect(url_for('auth.confirm', doi = doi, email = email))
 
         
 
@@ -69,11 +88,12 @@ def register():
 def confirm():
 
     doi = request.args.get('doi')
+    email = request.args.get('email')
     db = get_db()
 
-    article = db.execute(
+    articles = db.execute(
         'SELECT * FROM article_info WHERE doi = ?', (doi,)
-    ).fetchone()
+    ).fetchall()
 
 
     authors = db.execute(
@@ -143,7 +163,7 @@ def confirm():
         flash(error)
 
     
-    return render_template('auth/confirm.html', doi = doi, article = article, authors = authors, emails = emails)
+    return render_template('auth/confirm.html', doi = doi, articles = articles, authors = authors, emails = emails)
 
 @bp.before_app_request
 def load_logged_in_user():

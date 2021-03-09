@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS author_doi;
 DROP TABLE IF EXISTS article_info;
 DROP TABLE IF EXISTS journal;
+DROP TABLE IF EXISTS timings;
 DROP TABLE IF EXISTS post;
 
 
@@ -58,6 +59,14 @@ CREATE TABLE IF NOT EXISTS paper_path (
 CREATE TABLE journal (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   journal_name TEXT NOT NULL
+);
+
+CREATE TABLE timings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  query TEXT NOT NULL,
+  start_time DATETIME,
+  stop_time DATETIME,
+  seconds INTEGER
 );
 
 CREATE TABLE post (
