@@ -39,7 +39,7 @@ def get_bq_authors_and_emails():
         'left join pmdb-bq.pmdb.author as author on '
         'author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos '
         'left join pmdb-bq.pmdb.article_id as article_id on author_affiliation.pmid = article_id.pmid '
-        'where article_id.id_type = "doi" and author.last_name = "Hughey" and author.fore_name = "Jacob J";')
+        'where article_id.id_type = "doi";')
     query_job = client.query(query)  # API request
     rows = query_job.result()  # Waits for query to finish
     queryA = 'INSERT INTO author_doi(author_name, author_affiliation, doi) VALUES(?,?,?)'
@@ -77,7 +77,7 @@ def get_bq_article_info():
         'on article.pmid = journal.pmid '
         'left join pmdb-bq.pmdb.author as author on '
         'article.pmid = author.pmid '
-        'where article_id.id_type = "doi" and author.last_name = "Hughey" and author.fore_name = "Jacob J";')
+        'where article_id.id_type = "doi";')
     query_job = client.query(query)  # API request
     rows = query_job.result()  # Waits for query to finish
     # TODO: Figure out why my insert statement is treating the inputs as out of order (see the journal_name and doi variables and values....?)
