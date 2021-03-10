@@ -51,8 +51,16 @@ def get_bq_authors_and_emails():
     cur = db.cursor()
     cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(?,?,?,?)', ('bigquery get authors and emails', str(bqStart), str(bqEnd), str(bqEnd - bqStart)))
     emailDoiList = []
+    i = 0
+    iAuth = 0
+    iStart = time.time()
     for row in rows:
-        cur.execute(queryA, (row.author_name, row.affiliation, row.doi,))
+        if row.author_name != None and row.author_name != '':
+            authName = row.author_name
+        else:
+            authName = 'Unknown Author'
+        iAuth = iAuth + 1
+        cur.execute(queryA, (authName, row.affiliation, row.doi,))
         if row.email != None and row.email != '' and row.email != '}':
             if ',' in row.email:
                 for email in row.email.split(','):
@@ -60,11 +68,22 @@ def get_bq_authors_and_emails():
                     if emDoi not in emailDoiList:
                         cur.execute(queryE, (email, row.doi,))
                         emailDoiList.append(emDoi)
+                        i = i + 1
             else:
                 emDoi = row.email + row.doi
                 if emDoi not in emailDoiList:
                     cur.execute(queryE, (row.email, row.doi,))
                     emailDoiList.append(emDoi)
+                    i = i + 1
+        if i >= 100:
+            iEnd = time.time()
+            cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(?,?,?,?)', ('save ' + str(iAuth) + ' authors and ' + str(i) + ' emails', str(iStart), str(iEnd), str(iEnd - iStart)))
+            db.commit()
+            db = get_db()
+            cur = db.cursor()
+            i = 0
+            iAuth = 0
+            iStart = time.time()
 
     db.commit()
 
