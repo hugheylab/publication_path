@@ -1,7 +1,6 @@
 import psycopg2
 from psycopg2.extras import DictCursor
 from configparser import ConfigParser
-from google.cloud import bigquery
 
 import click
 from flask import current_app, g
