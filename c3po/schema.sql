@@ -31,7 +31,7 @@ DELETE FROM email_doi WHERE automated;
 
 CREATE TABLE article_info (
   id SERIAL PRIMARY KEY,
-  pmid TEXT UNIQUE NOT NULL,
+  pmid TEXT NOT NULL,
   title TEXT NOT NULL,
   journal_name TEXT NOT NULL,
   doi TEXT NOT NULL,

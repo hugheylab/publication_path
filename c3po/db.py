@@ -38,54 +38,29 @@ def get_pg_authors_and_emails():
 
     # Perform a query.
     query = (
-        "select CONCAT(author.fore_name, ' ', author.last_name) as author_name, article_id.id_value as doi, ARRAY_TO_STRING((SELECT REGEXP_MATCHES(author_affiliation.affiliation, '([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9_-]+)')), ',') as email, author_affiliation.affiliation as affiliation "
+        "INSERT INTO author_doi(author_name, author_affiliation, doi) (select CONCAT(author.fore_name, ' ', author.last_name) as author_name, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
         "from author_affiliation as author_affiliation "
         "left join author as author on "
         "author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
-        "where article_id.id_type = 'doi';")
-    bqStart = time.time()
+        "where article_id.id_type = 'doi';)")
+    authStart = time.time()
     cur.execute(query)
-    rows = cur.fetchall()
-    bqEnd = time.time()
-    queryA = 'INSERT INTO author_doi(author_name, author_affiliation, doi) VALUES(%s,%s,%s)'
-    queryE = 'INSERT INTO email_doi(email, doi) VALUES(%s,%s)'
+    authEnd = time.time()
     cur = db.cursor()
-    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('bigquery get authors and emails', str(datetime.fromtimestamp(bqStart)), str(datetime.fromtimestamp(bqEnd)), (bqEnd - bqStart)))
-    emailDoiList = []
-    i = 0
-    iAuth = 0
-    iStart = time.time()
-    for row in rows:
-        if row['author_name'] != None and row['author_name'] != '':
-            authName = row['author_name']
-        else:
-            authName = 'Unknown Author'
-        iAuth = iAuth + 1
-        cur.execute(queryA, (authName, row['affiliation'], row['doi'],))
-        if row['email'] != None and row['email'] != '' and row['email'] != '}':
-            if ',' in row['email']:
-                for email in row['email'].split(','):
-                    emDoi = email + row['doi']
-                    if emDoi not in emailDoiList:
-                        cur.execute(queryE, (email, row['doi'],))
-                        emailDoiList.append(emDoi)
-                        i = i + 1
-            else:
-                emDoi = row['email'] + row['doi']
-                if emDoi not in emailDoiList:
-                    cur.execute(queryE, (row['email'], row['doi'],))
-                    emailDoiList.append(emDoi)
-                    i = i + 1
-        if i >= 100:
-            iEnd = time.time()
-            cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('save ' + str(iAuth) + ' authors and ' + str(i) + ' emails', str(datetime.fromtimestamp(iStart)), str(datetime.fromtimestamp(iEnd)), (iEnd - iStart)))
-            db.commit()
-            db = get_db()
-            cur = db.cursor()
-            i = 0
-            iAuth = 0
-            iStart = time.time()
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('author_doi insert by query', str(datetime.fromtimestamp(authStart)), str(datetime.fromtimestamp(authEnd)), (authEnd - authStart)))
+    
+    query = (
+        "INSERT INTO email_doi(doi, email) (select article_id.id_value as doi, unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9_-]+)', 'g')) as email "
+        "from author_affiliation as author_affiliation "
+        "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
+        "where article_id.id_type = 'doi';)")
+    emStart = time.time()
+    cur.execute(query)
+    emEnd = time.time()
+    cur = db.cursor()
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('email_doi insert by query', str(datetime.fromtimestamp(emStart)), str(datetime.fromtimestamp(emEnd)), (emEnd - emStart)))
+    
 
     db.commit()
 
@@ -94,15 +69,13 @@ def get_pg_article_info():
     cur = db.cursor()
     # Perform a query.
     query = (
-        'insert into article_info(pmid, title, journal_name, doi, pub_date) (select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date '
-        'from article as article '
-        'left join article_id as article_id '
-        'on article.pmid = article_id.pmid '
-        'left join journal as journal '
-        'on article.pmid = journal.pmid '
-        'left join author as author on '
-        'article.pmid = author.pmid '
-        'where article_id.id_type = "doi");')
+        "insert into article_info(pmid, title, journal_name, doi, pub_date) (select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date "
+        "from article as article "
+        "left join article_id as article_id "
+        "on article.pmid = article_id.pmid "
+        "left join journal as journal "
+        "on article.pmid = journal.pmid "
+        "where article_id.id_type = 'doi');")
     cur.execute(query)  # Query
 
     db.commit()
