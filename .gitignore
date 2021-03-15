@@ -5,3 +5,4 @@ instance
 venv
 .vscode
 c3po/authorization_files
+*/database.ini

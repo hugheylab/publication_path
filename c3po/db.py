@@ -1,19 +1,18 @@
-import sqlite3
+import psycopg2
+from configparser import ConfigParser
 from google.cloud import bigquery
 
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
 import time
+from datetime import datetime
 
 
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
+        params = config()
+        g.db = psycopg2.connect(**params)
 
     return g.db
 
@@ -26,58 +25,60 @@ def close_db(e=None):
 
 def init_db(schema_file):
     db = get_db()
+    cur = db.cursor()
 
     with current_app.open_resource(schema_file) as f:
-        db.executescript(f.read().decode('utf8'))
+        cur.execute(f.read().decode('utf8'))
+        db.commit()
 
-def get_bq_authors_and_emails():
-    client = bigquery.Client()
+def get_pg_authors_and_emails():
+    db = get_db()
+    cur = db.cursor()
 
     # Perform a query.
     query = (
-        'select CONCAT(author.fore_name, " ", author.last_name) as author_name, article_id.id_value as doi, ARRAY_TO_STRING(REGEXP_EXTRACT_ALL(author_affiliation.affiliation, r"([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9_-]+)"), ",") as email, author_affiliation.affiliation as affiliation '
-        'from pmdb-bq.pmdb.author_affiliation as author_affiliation '
-        'left join pmdb-bq.pmdb.author as author on '
-        'author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos '
-        'left join pmdb-bq.pmdb.article_id as article_id on author_affiliation.pmid = article_id.pmid '
-        'where article_id.id_type = "doi";')
+        "select CONCAT(author.fore_name, ' ', author.last_name) as author_name, article_id.id_value as doi, ARRAY_TO_STRING((SELECT REGEXP_MATCHES(author_affiliation.affiliation, '([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9_-]+)')), ',') as email, author_affiliation.affiliation as affiliation "
+        "from author_affiliation as author_affiliation "
+        "left join author as author on "
+        "author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos "
+        "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
+        "where article_id.id_type = 'doi';")
     bqStart = time.time()
-    query_job = client.query(query)  # API request
-    rows = query_job.result()  # Waits for query to finish
+    cur.execute(query)
+    rows = cur.fetchall()
     bqEnd = time.time()
-    queryA = 'INSERT INTO author_doi(author_name, author_affiliation, doi) VALUES(?,?,?)'
-    queryE = 'INSERT INTO email_doi(email, doi) VALUES(?,?)'
-    db = get_db()
+    queryA = 'INSERT INTO author_doi(author_name, author_affiliation, doi) VALUES(%s,%s,%s)'
+    queryE = 'INSERT INTO email_doi(email, doi) VALUES(%s,%s)'
     cur = db.cursor()
-    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(?,?,?,?)', ('bigquery get authors and emails', str(bqStart), str(bqEnd), str(bqEnd - bqStart)))
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('bigquery get authors and emails', str(datetime.fromtimestamp(bqStart)), str(datetime.fromtimestamp(bqEnd)), (bqEnd - bqStart)))
     emailDoiList = []
     i = 0
     iAuth = 0
     iStart = time.time()
     for row in rows:
-        if row.author_name != None and row.author_name != '':
-            authName = row.author_name
+        if row[0] != None and row[0] != '':
+            authName = row[0]
         else:
             authName = 'Unknown Author'
         iAuth = iAuth + 1
-        cur.execute(queryA, (authName, row.affiliation, row.doi,))
-        if row.email != None and row.email != '' and row.email != '}':
-            if ',' in row.email:
-                for email in row.email.split(','):
-                    emDoi = email + row.doi
+        cur.execute(queryA, (authName, row[3], row[1],))
+        if row[2] != None and row[2] != '' and row[2] != '}':
+            if ',' in row[2]:
+                for email in row[2].split(','):
+                    emDoi = email + row[1]
                     if emDoi not in emailDoiList:
-                        cur.execute(queryE, (email, row.doi,))
+                        cur.execute(queryE, (email, row[1],))
                         emailDoiList.append(emDoi)
                         i = i + 1
             else:
-                emDoi = row.email + row.doi
+                emDoi = row[2] + row[1]
                 if emDoi not in emailDoiList:
-                    cur.execute(queryE, (row.email, row.doi,))
+                    cur.execute(queryE, (row[2], row[1],))
                     emailDoiList.append(emDoi)
                     i = i + 1
         if i >= 100:
             iEnd = time.time()
-            cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(?,?,?,?)', ('save ' + str(iAuth) + ' authors and ' + str(i) + ' emails', str(iStart), str(iEnd), str(iEnd - iStart)))
+            cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('save ' + str(iAuth) + ' authors and ' + str(i) + ' emails', str(datetime.fromtimestamp(iStart)), str(datetime.fromtimestamp(iEnd)), (iEnd - iStart)))
             db.commit()
             db = get_db()
             cur = db.cursor()
@@ -87,28 +88,21 @@ def get_bq_authors_and_emails():
 
     db.commit()
 
-def get_bq_article_info():
-    client = bigquery.Client()
-
-    # Perform a query.
-    query = (
-        'select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date '
-        'from pmdb-bq.pmdb.article as article '
-        'left join pmdb-bq.pmdb.article_id as article_id '
-        'on article.pmid = article_id.pmid '
-        'left join pmdb-bq.pmdb.journal as journal '
-        'on article.pmid = journal.pmid '
-        'left join pmdb-bq.pmdb.author as author on '
-        'article.pmid = author.pmid '
-        'where article_id.id_type = "doi";')
-    query_job = client.query(query)  # API request
-    rows = query_job.result()  # Waits for query to finish
-    # TODO: Figure out why my insert statement is treating the inputs as out of order (see the journal_name and doi variables and values....?)
-    query2 = 'INSERT INTO article_info(pmid, title, journal_name, doi, pub_date) VALUES(?,?,?,?,?)'
+def get_pg_article_info():
     db = get_db()
     cur = db.cursor()
-    for row in rows:
-        cur.execute(query2, (row.pmid, row.title, row.journal_name, row.doi, row.pub_date))
+    # Perform a query.
+    query = (
+        'insert into article_info(pmid, title, journal_name, doi, pub_date) (select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date '
+        'from article as article '
+        'left join article_id as article_id '
+        'on article.pmid = article_id.pmid '
+        'left join journal as journal '
+        'on article.pmid = journal.pmid '
+        'left join author as author on '
+        'article.pmid = author.pmid '
+        'where article_id.id_type = "doi");')
+    cur.execute(query)  # Query
 
     db.commit()
 
@@ -130,17 +124,34 @@ def init_db_command():
     init_db('schema.sql')
     click.echo('Initialized the database.')
 
-@click.command('init-db-bigquery')
+@click.command('init-db-postgres')
 @with_appcontext
-def init_db_bigquery_command():
+def init_db_postgres_command():
     """Clear the existing data and create new tables."""
     init_db('schema.sql')
-    get_bq_authors_and_emails()
-    get_bq_article_info()
+    get_pg_authors_and_emails()
+    get_pg_article_info()
     get_journals()
     click.echo('Initialized the database.')
 
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
-    app.cli.add_command(init_db_bigquery_command)
+    app.cli.add_command(init_db_postgres_command)
+
+def config(filename='c3po/database.ini', section='postgresql'):
+    # create a parser
+    parser = ConfigParser()
+    # read config file
+    parser.read(filename)
+
+    # get section, default to postgresql
+    db = {}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            db[param[0]] = param[1]
+    else:
+        raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+
+    return db

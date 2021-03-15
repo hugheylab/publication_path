@@ -9,7 +9,6 @@ def create_app(test_config=None):
     app.secret_key = os.urandom(16)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        DATABASE='instance/c3po.sqlite',
     )
 
     if test_config is None:
