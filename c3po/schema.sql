@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS author_doi;
 DROP TABLE IF EXISTS article_info;
-DROP TABLE IF EXISTS journal;
+DROP TABLE IF EXISTS journal_name;
 DROP TABLE IF EXISTS timings;
 DROP TABLE IF EXISTS post;
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS paper_path (
   FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)
 );
 
-CREATE TABLE journal (
+CREATE TABLE journal_name (
   id SERIAL PRIMARY KEY,
   journal_name TEXT NOT NULL
 );

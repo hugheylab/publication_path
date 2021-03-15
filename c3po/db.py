@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2.extras import DictCursor
 from configparser import ConfigParser
 from google.cloud import bigquery
 
@@ -56,24 +57,24 @@ def get_pg_authors_and_emails():
     iAuth = 0
     iStart = time.time()
     for row in rows:
-        if row[0] != None and row[0] != '':
-            authName = row[0]
+        if row['author_name'] != None and row['author_name'] != '':
+            authName = row['author_name']
         else:
             authName = 'Unknown Author'
         iAuth = iAuth + 1
-        cur.execute(queryA, (authName, row[3], row[1],))
-        if row[2] != None and row[2] != '' and row[2] != '}':
-            if ',' in row[2]:
-                for email in row[2].split(','):
-                    emDoi = email + row[1]
+        cur.execute(queryA, (authName, row['affiliation'], row['doi'],))
+        if row['email'] != None and row['email'] != '' and row['email'] != '}':
+            if ',' in row['email']:
+                for email in row['email'].split(','):
+                    emDoi = email + row['doi']
                     if emDoi not in emailDoiList:
-                        cur.execute(queryE, (email, row[1],))
+                        cur.execute(queryE, (email, row['doi'],))
                         emailDoiList.append(emDoi)
                         i = i + 1
             else:
-                emDoi = row[2] + row[1]
+                emDoi = row['email'] + row['doi']
                 if emDoi not in emailDoiList:
-                    cur.execute(queryE, (row[2], row[1],))
+                    cur.execute(queryE, (row['email'], row['doi'],))
                     emailDoiList.append(emDoi)
                     i = i + 1
         if i >= 100:
@@ -110,9 +111,9 @@ def get_journals():
     # Perform a query.
     db = get_db()
     cur = db.cursor()
-    query = 'DROP TABLE journal;'
+    query = 'DROP TABLE journal_name;'
     cur.execute(query,)
-    query = 'CREATE TABLE journal AS SELECT DISTINCT(journal_name) AS journal_name FROM article_info;'
+    query = 'CREATE TABLE journal_name AS SELECT DISTINCT(journal_name) AS journal_name FROM article_info;'
     cur.execute(query,)
     db.commit()
 
@@ -129,7 +130,7 @@ def init_db_command():
 def init_db_postgres_command():
     """Clear the existing data and create new tables."""
     init_db('schema.sql')
-    get_pg_authors_and_emails()
+    # get_pg_authors_and_emails()
     get_pg_article_info()
     get_journals()
     click.echo('Initialized the database.')

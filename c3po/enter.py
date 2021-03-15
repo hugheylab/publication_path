@@ -43,7 +43,7 @@ def enter(url_id):
     ).fetchone()
 
     journal_opts = db.execute(
-        'SELECT * FROM journal', ()
+        'SELECT * FROM journal_name', ()
     ).fetchall()
     
     confirm = False
