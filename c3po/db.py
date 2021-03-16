@@ -93,6 +93,27 @@ def get_journals():
     db.commit()
 
 
+def pg_query(db = None, qType = 'fetchone', query = '', arguments = None, commit = True, closeDb = False):
+    if db is None :
+        db = get_db()
+        closeDb = True
+    cur = db.cursor()
+    cur.ececute(query, arguments)
+    if qType == 'fetchone':
+        retVal = cur.fetchone()
+    elif qType == 'fetchall':
+        retVal = cur.fetchall()
+    else:
+        if commit:
+            db.commit()
+        retVal = 'Executed'
+
+    cur.close()
+    if closeDb:
+        db.close()
+    return retVal
+
+
 @click.command('init-db')
 @with_appcontext
 def init_db_command():

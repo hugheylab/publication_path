@@ -28,6 +28,7 @@ def enter(url_id):
         'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
     )
     email_url = cur.fetchone()
+    cur.close()
     cur = db.cursor()
     print('email_url debug start')
     print(email_url)
@@ -44,6 +45,7 @@ def enter(url_id):
         'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp IS NOT NULL and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
     )
     completed_paths = cur.fetchall()
+    cur.close()
     cur = db.cursor()
     
 
@@ -51,19 +53,21 @@ def enter(url_id):
         'SELECT * FROM author_doi WHERE doi = %s', (email_url['doi'],)
     )
     author_doi = cur.fetchall()
+    cur.close()
     cur = db.cursor()
 
     cur.execute(
         'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
     )
     article_info = cur.fetchone()
+    cur.close()
     cur = db.cursor()
 
     cur.execute(
         'SELECT * FROM journal_name', ()
     )
     journal_opts = cur.fetchall()
-    cur = db.cursor()
+    cur.close()
     
     confirm = False
     
@@ -136,12 +140,15 @@ def enter(url_id):
                 cur = db.cursor()
                 cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["url_param_id"]))
                 db.commit()
-                sql = ''' UPDATE email_url
-                    SET completed_timestamp = ?
-                    WHERE url_param_id = %s '''
-                cur = db.cursor()
-                cur.execute(sql, (datetime.now(), url_id))
-                db.commit()
+                cur.close()
+            sql = ''' UPDATE email_url
+                SET completed_timestamp = %s
+                WHERE url_param_id = %s '''
+            cur = db.cursor()
+            cur.execute(sql, (datetime.now(), url_id))
+            db.commit()
+            cur.close()
+            db.close()
             return redirect(url_for('thanks.thanks', thanks_type = 'submission'))
 
         if error != None:
@@ -154,11 +161,13 @@ def enter(url_id):
             'SELECT * FROM paper_path WHERE url_param_id = %s', (url_id,)
         )
         path_list_entered = cur.fetchall()
+        cur.close()
         path_list_tmp = []
         for path_list_item in path_list_entered:
             path_list_tmp.append(paper_path(idx = (path_list_item['step'] - 1), url_param_id = url_id, step = path_list_item['step'], journal = path_list_item['journal'], submit_date = path_list_item['submission_date'], error = '', show_error = False).__dict__)
 
     
+    db.close()
     return render_template('enter.html', email_url = email_url, journal_opts = journal_opts, article_info = article_info, author_doi = author_doi, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0))
 
 class paper_path:
