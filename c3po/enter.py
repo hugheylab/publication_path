@@ -21,32 +21,49 @@ bp = Blueprint('enter', __name__, url_prefix='/enter')
 def enter(url_id):
 
     db = get_db()
+    cur = db.cursor()
 
     allow_enter = True
-    email_url = db.execute(
+    cur.execute(
         'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
-    ).fetchone()
+    )
+    email_url = cur.fetchone()
+    cur = db.cursor()
+    print('email_url debug start')
+    print(email_url)
+    print(email_url['completed_timestamp'])
+    print(email_url['completed_timestamp'] != '')
+    print(email_url['completed_timestamp'] is not None)
+    print('email_url debug end')
 
-    if email_url['completed_timestamp'] != '':
+    if email_url['completed_timestamp'] is not None:
         error = 'Path already entered for this unique URL, please re-register if you wish to enter a new publication path!'
         allow_enter = False
 
-    completed_paths = db.execute(
-        'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp != "" and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
-    ).fetchall()
+    cur.execute(
+        'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp IS NOT NULL and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
+    )
+    completed_paths = cur.fetchall()
+    cur = db.cursor()
     
 
-    author_doi = db.execute(
+    cur.execute(
         'SELECT * FROM author_doi WHERE doi = %s', (email_url['doi'],)
-    ).fetchall()
+    )
+    author_doi = cur.fetchall()
+    cur = db.cursor()
 
-    article_info = db.execute(
+    cur.execute(
         'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
-    ).fetchone()
+    )
+    article_info = cur.fetchone()
+    cur = db.cursor()
 
-    journal_opts = db.execute(
+    cur.execute(
         'SELECT * FROM journal_name', ()
-    ).fetchall()
+    )
+    journal_opts = cur.fetchall()
+    cur = db.cursor()
     
     confirm = False
     
@@ -132,9 +149,11 @@ def enter(url_id):
 
         session["path_list"] = path_list_tmp
     elif allow_enter == False:
-        path_list_entered = db.execute(
+        cur = db.cursor()
+        cur.execute(
             'SELECT * FROM paper_path WHERE url_param_id = %s', (url_id,)
-        ).fetchall()
+        )
+        path_list_entered = cur.fetchall()
         path_list_tmp = []
         for path_list_item in path_list_entered:
             path_list_tmp.append(paper_path(idx = (path_list_item['step'] - 1), url_param_id = url_id, step = path_list_item['step'], journal = path_list_item['journal'], submit_date = path_list_item['submission_date'], error = '', show_error = False).__dict__)

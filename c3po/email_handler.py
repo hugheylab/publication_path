@@ -4,13 +4,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def send_email(receiver_email, message_text, subject, db):
-    acceptEmail = ['jakejhughey@gmail.com']
+    acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com']
     if receiver_email in acceptEmail:
+        cur = db.cursor()
         smtp_server = "smtp.gmail.com"
         port = 587  # For starttls
-        emailSender = db.execute(
+        cur.execute(
             'SELECT * FROM email_address WHERE active = TRUE', 
-        ).fetchone()
+        )
+        emailSender = cur.fetchone()
         sender_email = emailSender['email']
         password = emailSender['password']
 

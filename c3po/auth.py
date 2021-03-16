@@ -142,8 +142,11 @@ def confirm():
 
         for email in emails:
             if email['email'] in request.form:
+                for aTmp in articles:
+                    if aTmp['doi'] == email['doi']:
+                        article = aTmp
                 sentEmail = True
-                url_id = str(now) + str(hash(email))
+                url_id = str(now) + str(hash(email['email']))
                 revision = 1
                 cur.execute(
                     'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
@@ -153,9 +156,9 @@ def confirm():
                 if not emUrl is None:
                     revision = int(emUrl['revision']) + 1
                 # email_url_tmp = email_url(email = author['email'], url_param_id = url_id, doi = doi, revision = '1', completed_timestamp = '')
-                sql = ''' INSERT INTO email_url(email,url_param_id,doi,revision,completed_timestamp)
-                VALUES(%s,%s,%s,%s,%s) '''
-                email_url_tmp = (email['email'], url_id, doi, revision, '')
+                sql = ''' INSERT INTO email_url(email,url_param_id,doi,revision)
+                VALUES(%s,%s,%s,%s) '''
+                email_url_tmp = (email['email'], url_id, doi, revision)
                 cur = db.cursor()
                 cur.execute(sql, email_url_tmp)
                 db.commit()
