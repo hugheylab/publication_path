@@ -1,5 +1,7 @@
 import functools
 import re
+import psycopg2
+from psycopg2.extras import DictCursor
 
 from datetime import datetime
 
@@ -18,6 +20,7 @@ def register():
 
     if request.method == 'POST':
         db = get_db()
+        cur = db.cursor()
         error = None
         doi = request.form['doi']
         email = ''
@@ -25,9 +28,11 @@ def register():
             email = str(doi)
             print('Email: ' + email)
 
-            emails = db.execute(
+            cur.execute(
                 'SELECT * FROM email_doi WHERE email = ?', (email,)
-            ).fetchall()
+            )
+            emails = cur.fetchall()
+            cur = db.cursor()
 
             print(str(emails))
 
@@ -47,30 +52,38 @@ def register():
             doi = doi.replace('doi.org/', '')
 
 
-        article = db.execute(
-            'SELECT * FROM article_info WHERE doi = ?', (doi,)
-        ).fetchone()
+        cur.execute(
+            'SELECT * FROM article_info WHERE doi = %s', (doi,)
+        )
+        article = cur.fetchone()
+        cur = db.cursor()
         pmid = 0
         if article is None:
             pmid = doi
-            article = db.execute(
-                'SELECT * FROM article_info WHERE pmid = ?', (pmid,)
-            ).fetchone()
+            cur.execute(
+                'SELECT * FROM article_info WHERE pmid = %s', (pmid,)
+            )
+            article = cur.fetchone()
+            cur = db.cursor()
             if not article is None:
                 doi = article["doi"]
 
-        emails = db.execute(
-            'SELECT * FROM email_doi WHERE doi = ?', (doi,)
-        ).fetchone()
+        cur.execute(
+            'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+        )
+        emails = cur.fetchone()
+        cur = db.cursor()
 
         if article is None:
             error = "No article found with supplied DOI. Please try searching again."
         elif emails is None:
             error = "No emails associated with supplied DOI. Please try searching for another DOI."
         else:
-            authors = db.execute(
-                'SELECT * FROM author_doi WHERE doi = ?', (doi,)
-            ).fetchall()
+            cur.execute(
+                'SELECT * FROM author_doi WHERE doi = %s', (doi,)
+            )
+            authors = cur.fetchall()
+            cur = db.cursor()
 
             if authors is None:
                 error = 'No authors found for selected DOI.'
@@ -90,20 +103,30 @@ def confirm():
     doi = request.args.get('doi')
     email = request.args.get('email')
     db = get_db()
+    cur = db.cursor()
 
-    articles = db.execute(
-        'SELECT * FROM article_info WHERE doi = ?', (doi,)
-    ).fetchall()
+    cur.execute(
+        'SELECT * FROM article_info WHERE doi = %s', (doi,)
+    )
+    articles = cur.fetchall()
+    print(articles)
+    print(articles[0])
+    print(articles[0]["title"])
+    cur = db.cursor()
 
 
-    authors = db.execute(
-        'SELECT * FROM author_doi WHERE doi = ?', (doi,)
-    ).fetchall()
+    cur.execute(
+        'SELECT * FROM author_doi WHERE doi = %s', (doi,)
+    )
+    authors = cur.fetchall()
+    cur = db.cursor()
 
 
-    emails = db.execute(
-        'SELECT * FROM email_doi WHERE doi = ?', (doi,)
-    ).fetchall()
+    cur.execute(
+        'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+    )
+    emails = cur.fetchall()
+    cur = db.cursor()
 
     error = None
     if request.method == 'POST':
@@ -122,14 +145,16 @@ def confirm():
                 sentEmail = True
                 url_id = str(now) + str(hash(email))
                 revision = 1
-                emUrl = db.execute(
-                    'SELECT * FROM email_url WHERE email = ? AND doi = ? ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
-                ).fetchone()
+                cur.execute(
+                    'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
+                )
+                emUrl = cur.fetchone()
+                cur = db.cursor()
                 if not emUrl is None:
                     revision = int(emUrl['revision']) + 1
                 # email_url_tmp = email_url(email = author['email'], url_param_id = url_id, doi = doi, revision = '1', completed_timestamp = '')
                 sql = ''' INSERT INTO email_url(email,url_param_id,doi,revision,completed_timestamp)
-                VALUES(?,?,?,?,?) '''
+                VALUES(%s,%s,%s,%s,%s) '''
                 email_url_tmp = (email['email'], url_id, doi, revision, '')
                 cur = db.cursor()
                 cur.execute(sql, email_url_tmp)

@@ -4,6 +4,8 @@ from json import JSONEncoder
 import datetime
 from datetime import datetime
 from datetime import date
+import psycopg2
+from psycopg2.extras import DictCursor
 
 
 from flask import (
@@ -22,7 +24,7 @@ def enter(url_id):
 
     allow_enter = True
     email_url = db.execute(
-        'SELECT * FROM email_url WHERE url_param_id = ?', (url_id,)
+        'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
     ).fetchone()
 
     if email_url['completed_timestamp'] != '':
@@ -30,16 +32,16 @@ def enter(url_id):
         allow_enter = False
 
     completed_paths = db.execute(
-        'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp != "" and doi = ? ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
+        'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp != "" and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
     ).fetchall()
     
 
     author_doi = db.execute(
-        'SELECT * FROM author_doi WHERE doi = ?', (email_url['doi'],)
+        'SELECT * FROM author_doi WHERE doi = %s', (email_url['doi'],)
     ).fetchall()
 
     article_info = db.execute(
-        'SELECT * FROM article_info WHERE doi = ?', (email_url["doi"],)
+        'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
     ).fetchone()
 
     journal_opts = db.execute(
@@ -113,13 +115,13 @@ def enter(url_id):
         elif 'confirm' in request.form:
             for path_item in path_list_tmp:
                 sql = ''' INSERT INTO paper_path(step,submission_date,journal,url_param_id)
-                    VALUES(?,?,?,?) '''
+                    VALUES(%s,%s,%s,%s) '''
                 cur = db.cursor()
                 cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["url_param_id"]))
                 db.commit()
                 sql = ''' UPDATE email_url
                     SET completed_timestamp = ?
-                    WHERE url_param_id = ? '''
+                    WHERE url_param_id = %s '''
                 cur = db.cursor()
                 cur.execute(sql, (datetime.now(), url_id))
                 db.commit()
@@ -131,7 +133,7 @@ def enter(url_id):
         session["path_list"] = path_list_tmp
     elif allow_enter == False:
         path_list_entered = db.execute(
-            'SELECT * FROM paper_path WHERE url_param_id = ?', (url_id,)
+            'SELECT * FROM paper_path WHERE url_param_id = %s', (url_id,)
         ).fetchall()
         path_list_tmp = []
         for path_list_item in path_list_entered:

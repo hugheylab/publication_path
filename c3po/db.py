@@ -12,7 +12,8 @@ from datetime import datetime
 def get_db():
     if 'db' not in g:
         params = config()
-        g.db = psycopg2.connect(**params)
+        g.db = psycopg2.connect(**params,
+                              cursor_factory=DictCursor)
 
     return g.db
 
@@ -42,23 +43,25 @@ def get_pg_authors_and_emails():
         "left join author as author on "
         "author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
-        "where article_id.id_type = 'doi';)")
+        "where article_id.id_type = 'doi');")
     authStart = time.time()
     cur.execute(query)
     authEnd = time.time()
-    cur = db.cursor()
-    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('author_doi insert by query', str(datetime.fromtimestamp(authStart)), str(datetime.fromtimestamp(authEnd)), (authEnd - authStart)))
+    db.commit()
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s);', ('author_doi insert by query', str(datetime.fromtimestamp(authStart)), str(datetime.fromtimestamp(authEnd)), (authEnd - authStart)))
+    db.commit()
     
     query = (
-        "INSERT INTO email_doi(doi, email) (select article_id.id_value as doi, unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9_-]+)', 'g')) as email "
+        "INSERT INTO email_doi(doi, email) (select article_id.id_value as doi, unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z0-9_-]+)', 'g')) as email "
         "from author_affiliation as author_affiliation "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
-        "where article_id.id_type = 'doi';)")
+        "where article_id.id_type = 'doi');")
     emStart = time.time()
     cur.execute(query)
     emEnd = time.time()
+    db.commit()
     cur = db.cursor()
-    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s)', ('email_doi insert by query', str(datetime.fromtimestamp(emStart)), str(datetime.fromtimestamp(emEnd)), (emEnd - emStart)))
+    cur.execute('INSERT INTO timings(query, start_time, stop_time, seconds) VALUES(%s,%s,%s,%s);', ('email_doi insert by query', str(datetime.fromtimestamp(emStart)), str(datetime.fromtimestamp(emEnd)), (emEnd - emStart)))
     
 
     db.commit()
@@ -102,7 +105,7 @@ def init_db_command():
 def init_db_postgres_command():
     """Clear the existing data and create new tables."""
     init_db('schema.sql')
-    # get_pg_authors_and_emails()
+    get_pg_authors_and_emails()
     get_pg_article_info()
     get_journals()
     click.echo('Initialized the database.')
