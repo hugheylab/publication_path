@@ -167,7 +167,7 @@ def confirm():
                         <p>Hello,<br/> You have been registered to enter in publication information for the Hughey Lab publication pipeline project! Here is the paper you were registered to enter:<br/>
                         DOI: """ + doi + """<br/>
                         Title: """ + article['title'] + """<br/>
-                        Here is your unique URL: http://3.15.23.77:5000/enter/""" + url_id + """</p>
+                        Here is your unique URL: http://3.142.187.194/:5000/enter/""" + url_id + """</p>
                     </body>
                 </html>
                 """
