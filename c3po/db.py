@@ -118,9 +118,10 @@ def get_pg_article_info():
     query4 = (
         "insert into pmid_doi(pmid, doi) "
 	    "(select pmid, "
-	 	"id_value as doi "
+	 	"max(id_value) as doi "
 	    "from article_id "
-	    "where id_type = 'doi');")
+	    "where id_type = 'doi' "
+		"group by pmid);")
     cur.execute(query4)  # Query
 
     db.commit()

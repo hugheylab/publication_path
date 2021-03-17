@@ -71,11 +71,15 @@ def register():
             if not article is None:
                 doi = article["doi"]
 
+        doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
+        print(doi_child)
+        auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
+        email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
         # cur.execute(
         #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
         # )
         # emails = cur.fetchone()
-        emails = pg_query(db, 'fetchone', 'SELECT * FROM email_doi WHERE doi = %s', (doi,))
+        emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
 
         if article is None:
             error = "No article found with supplied DOI. Please try searching again."
@@ -86,7 +90,7 @@ def register():
             #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
             # )
             # authors = cur.fetchall()
-            authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE doi = %s', (doi,))
+            authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids, ())
 
             if authors is None:
                 error = 'No authors found for selected DOI.'

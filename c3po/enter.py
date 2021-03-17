@@ -14,6 +14,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from c3po.db import get_db
+from c3po.db import pg_query
 
 bp = Blueprint('enter', __name__, url_prefix='/enter')
 
@@ -21,15 +22,13 @@ bp = Blueprint('enter', __name__, url_prefix='/enter')
 def enter(url_id):
 
     db = get_db()
-    cur = db.cursor()
 
     allow_enter = True
-    cur.execute(
-        'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
-    )
-    email_url = cur.fetchone()
-    cur.close()
-    cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
+    # )
+    # email_url = cur.fetchone()
+    email_url = pg_query(db, 'fetchone', 'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,))
     print('email_url debug start')
     print(email_url)
     print(email_url['completed_timestamp'])
@@ -41,33 +40,33 @@ def enter(url_id):
         error = 'Path already entered for this unique URL, please re-register if you wish to enter a new publication path!'
         allow_enter = False
 
-    cur.execute(
-        'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp IS NOT NULL and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
-    )
-    completed_paths = cur.fetchall()
-    cur.close()
-    cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp IS NOT NULL and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],)
+    # )
+    # completed_paths = cur.fetchall()
+    completed_paths = pg_query(db, 'fetchall', 'SELECT * from paper_path WHERE url_param_id = (SELECT url_param_id from email_url WHERE completed_timestamp IS NOT NULL and doi = %s ORDER BY completed_timestamp DESC LIMIT 1) ORDER BY step ASC;', (email_url['doi'],))
     
 
-    cur.execute(
-        'SELECT * FROM author_doi WHERE doi = %s', (email_url['doi'],)
-    )
-    author_doi = cur.fetchall()
-    cur.close()
-    cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * FROM author_doi WHERE doi = %s', (email_url['doi'],)
+    # )
+    # author_doi = cur.fetchall()
+    doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (email_url["doi"],))
+    print(doi_child)
+    auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
+    author_doi = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids, ())
 
-    cur.execute(
-        'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
-    )
-    article_info = cur.fetchone()
-    cur.close()
-    cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
+    # )
+    # article_info = cur.fetchone()
+    article_info = pg_query(db, 'fetchone', 'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],))
 
-    cur.execute(
-        'SELECT * FROM journal_name', ()
-    )
-    journal_opts = cur.fetchall()
-    cur.close()
+    # cur.execute(
+    #     'SELECT * FROM journal_name', ()
+    # )
+    # journal_opts = cur.fetchall()
+    journal_opts = pg_query(db, 'fetchall', 'SELECT * FROM journal_name', ())
     
     confirm = False
     
