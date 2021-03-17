@@ -74,13 +74,28 @@ def register():
 
         doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
         print(doi_child)
+        has_emails = False
+        if doi_child['email_ids'] != None:
+            i = len(doi_child['email_ids']) - 1
+            while i >= 0:
+                if doi_child['email_ids'][i] == None or not isinstance(doi_child['email_ids'][i], int):
+                    doi_child['email_ids'].pop(i)
+
+                i = i - 1
+            if doi_child['email_ids'] != None and len(doi_child['email_ids']) > 0:
+                has_emails = True
+
+
         auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
-        email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
-        # cur.execute(
-        #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
-        # )
-        # emails = cur.fetchone()
-        emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
+        email_ids = None
+        emails = None
+        if has_emails:
+            email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
+            # cur.execute(
+            #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+            # )
+            # emails = cur.fetchone()
+            emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
 
         if article is None:
             error = "No article found with supplied DOI. Please try searching again."
@@ -187,7 +202,7 @@ def confirm():
                         <p>Hello,<br/> You have been registered to enter in publication information for the Hughey Lab publication pipeline project! Here is the paper you were registered to enter:<br/>
                         DOI: """ + doi + """<br/>
                         Title: """ + article['title'] + """<br/>
-                        Here is your unique URL: http://3.142.187.194/:5000/enter/""" + url_id + """</p>
+                        Here is your unique URL: http://3.142.187.194:5000/enter/""" + url_id + """</p>
                     </body>
                 </html>
                 """
