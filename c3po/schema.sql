@@ -3,6 +3,9 @@ DROP TABLE IF EXISTS article_info;
 DROP TABLE IF EXISTS journal_name;
 DROP TABLE IF EXISTS timings;
 DROP TABLE IF EXISTS post;
+DROP TABLE IF EXISTS doi_child_tables;
+DROP TABLE IF EXISTS email_doi_tables;
+DROP TABLE IF EXISTS pmid_doi;
 
 
 
@@ -30,12 +33,28 @@ CREATE TABLE IF NOT EXISTS email_doi (
 DELETE FROM email_doi WHERE automated;
 
 CREATE TABLE article_info (
-  id SERIAL PRIMARY KEY,
+  id SERIAL,
   pmid TEXT NOT NULL,
   title TEXT NOT NULL,
   journal_name TEXT NOT NULL,
-  doi TEXT NOT NULL,
+  doi TEXT PRIMARY KEY,
   pub_date DATE
+);
+
+CREATE TABLE doi_child_tables (
+  doi TEXT PRIMARY KEY,
+  email_ids INTEGER[],
+  author_ids INTEGER[]
+);
+
+CREATE TABLE email_doi_tables (
+  email TEXT PRIMARY KEY,
+  dois TEXT[]
+);
+
+CREATE TABLE pmid_doi (
+  pmid INTEGER PRIMARY KEY,
+  doi TEXT
 );
 
 CREATE TABLE If NOT EXISTS email_url (

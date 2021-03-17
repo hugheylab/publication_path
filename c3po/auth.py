@@ -11,6 +11,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from c3po.db import get_db
+from c3po.db import pg_query
 from c3po.email_handler import send_email
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -20,7 +21,6 @@ def register():
 
     if request.method == 'POST':
         db = get_db()
-        cur = db.cursor()
         error = None
         doi = request.form['doi']
         email = ''
@@ -28,11 +28,11 @@ def register():
             email = str(doi)
             print('Email: ' + email)
 
-            cur.execute(
-                'SELECT * FROM email_doi WHERE email = ?', (email,)
-            )
-            emails = cur.fetchall()
-            cur = db.cursor()
+            # cur.execute(
+            #     'SELECT * FROM email_doi WHERE email = ?', (email,)
+            # )
+            # emails = cur.fetchall()
+            emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi_tables WHERE email = %s', (email,))
 
             print(str(emails))
 
@@ -41,6 +41,8 @@ def register():
                 flash(error)
                 return render_template('auth/register.html')
             else:
+                print(str(emails[0]))
+                print(str(emails[0]['dois']))
                 return redirect(url_for('auth.confirm', doi = doi, email = email))
 
         if 'doi.org' in doi:
@@ -52,48 +54,51 @@ def register():
             doi = doi.replace('doi.org/', '')
 
 
-        cur.execute(
-            'SELECT * FROM article_info WHERE doi = %s', (doi,)
-        )
-        article = cur.fetchone()
-        cur = db.cursor()
+        # cur.execute(
+        #     'SELECT * FROM article_info WHERE doi = %s', (doi,)
+        # )
+        # article = cur.fetchone() 
+        article = pg_query(db, 'fetchone', 'SELECT * FROM article_info WHERE doi = %s', (doi,))
+
         pmid = 0
         if article is None:
             pmid = doi
-            cur.execute(
-                'SELECT * FROM article_info WHERE pmid = %s', (pmid,)
-            )
-            article = cur.fetchone()
-            cur = db.cursor()
+            # cur.execute(
+            #     'SELECT * FROM article_info WHERE pmid = %s', (pmid,)
+            # )
+            # article = cur.fetchone()
+            article = pg_query(db, 'SELECT * FROM pmid_doi WHERE pmid = %s', (pmid,))
             if not article is None:
                 doi = article["doi"]
 
-        cur.execute(
-            'SELECT * FROM email_doi WHERE doi = %s', (doi,)
-        )
-        emails = cur.fetchone()
-        cur = db.cursor()
+        # cur.execute(
+        #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+        # )
+        # emails = cur.fetchone()
+        emails = pg_query(db, 'fetchone', 'SELECT * FROM email_doi WHERE doi = %s', (doi,))
 
         if article is None:
             error = "No article found with supplied DOI. Please try searching again."
         elif emails is None:
             error = "No emails associated with supplied DOI. Please try searching for another DOI."
         else:
-            cur.execute(
-                'SELECT * FROM author_doi WHERE doi = %s', (doi,)
-            )
-            authors = cur.fetchall()
-            cur = db.cursor()
+            # cur.execute(
+            #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
+            # )
+            # authors = cur.fetchall()
+            authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE doi = %s', (doi,))
 
             if authors is None:
                 error = 'No authors found for selected DOI.'
 
             if error is None:
+                db.close()
                 return redirect(url_for('auth.confirm', doi = doi, email = email))
 
         
 
         flash(error)
+        db.close()
     
     return render_template('auth/register.html')
 
@@ -103,30 +108,36 @@ def confirm():
     doi = request.args.get('doi')
     email = request.args.get('email')
     db = get_db()
-    cur = db.cursor()
 
-    cur.execute(
-        'SELECT * FROM article_info WHERE doi = %s', (doi,)
-    )
-    articles = cur.fetchall()
+    # cur.execute(
+    #     'SELECT * FROM article_info WHERE doi = %s', (doi,)
+    # )
+    # articles = cur.fetchall()
+    articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi = %s', (doi,))
     print(articles)
     print(articles[0])
     print(articles[0]["title"])
-    cur = db.cursor()
+
+    doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
+
+    print(doi_child)
+
+    auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
+
+    email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
+
+    # cur.execute(
+    #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
+    # )
+    # authors = cur.fetchall()
+    authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids, ())
 
 
-    cur.execute(
-        'SELECT * FROM author_doi WHERE doi = %s', (doi,)
-    )
-    authors = cur.fetchall()
-    cur = db.cursor()
-
-
-    cur.execute(
-        'SELECT * FROM email_doi WHERE doi = %s', (doi,)
-    )
-    emails = cur.fetchall()
-    cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+    # )
+    # emails = cur.fetchall()
+    emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
 
     error = None
     if request.method == 'POST':
@@ -148,21 +159,22 @@ def confirm():
                 sentEmail = True
                 url_id = str(now) + str(hash(email['email']))
                 revision = 1
-                cur.execute(
-                    'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
-                )
-                emUrl = cur.fetchone()
-                cur = db.cursor()
+                # cur.execute(
+                #     'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
+                # )
+                # emUrl = cur.fetchone()
+                emUrl = pg_query(db, 'fetchone', 'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,))
                 if not emUrl is None:
                     revision = int(emUrl['revision']) + 1
                 # email_url_tmp = email_url(email = author['email'], url_param_id = url_id, doi = doi, revision = '1', completed_timestamp = '')
                 sql = ''' INSERT INTO email_url(email,url_param_id,doi,revision)
                 VALUES(%s,%s,%s,%s) '''
                 email_url_tmp = (email['email'], url_id, doi, revision)
-                cur = db.cursor()
-                cur.execute(sql, email_url_tmp)
-                db.commit()
-                error = cur.lastrowid
+                # cur = db.cursor()
+                # cur.execute(sql, email_url_tmp)
+                # db.commit()
+                pg_query(db, 'insert', sql, email_url_tmp)
+                # error = cur.lastrowid
 
                 message_text = """\
                 <html>
@@ -179,6 +191,7 @@ def confirm():
 
                 # email_urls.append(email_url_tmp)
         if sentEmail == True:
+            db.close()
             return redirect(url_for('thanks.thanks', thanks_type = 'registration'))
         else:
             error = 'No emails selected, please select at least one email to send url to.'
@@ -190,7 +203,7 @@ def confirm():
 
         flash(error)
 
-    
+    db.close()
     return render_template('auth/confirm.html', doi = doi, articles = articles, authors = authors, emails = emails)
 
 @bp.before_app_request

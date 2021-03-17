@@ -71,16 +71,60 @@ def get_pg_article_info():
     cur = db.cursor()
     # Perform a query.
     query = (
-        "insert into article_info(pmid, title, journal_name, doi, pub_date) (select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date "
-        "from article as article "
-        "left join article_id as article_id "
-        "on article.pmid = article_id.pmid "
-        "left join journal as journal "
-        "on article.pmid = journal.pmid "
-        "where article_id.id_type = 'doi');")
+        "with article_tmp as "
+        "(select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date  "
+        "from article as article  "
+        "left join article_id as article_id  "
+        "on article.pmid = article_id.pmid  "
+        "left join journal as journal  "
+        "on article.pmid = journal.pmid  "
+        "where article_id.id_type = 'doi' and article_id.id_value != '' and article_id.id_value != ' ' and article_id.id_value IS NOT NULL) "
+        ", article_rank AS "
+        "( "
+            "SELECT "
+            "*, "
+            "RANK () OVER (  "
+                "PARTITION BY doi "
+                "ORDER BY  pub_date DESC NULLS LAST, pmid DESC NULLS LAST "
+            ") rank_number  "
+        "FROM "
+            "article_tmp "
+        ") "
+        "insert into article_info(pmid, title, journal_name, doi, pub_date) (SELECT  "
+            "pmid, title, journal_name, doi, pub_date "
+        "FROM article_rank "
+        "WHERE rank_number = 1);")
     cur.execute(query)  # Query
 
+    query2 = (
+        "insert into doi_child_tables(doi, email_ids, author_ids) "
+	    "(select article_info.doi, "
+	 	"array_agg(email_doi.id) as email_ids, "
+	    "array_agg(author_doi.id) as author_ids "
+	    "from article_info "
+	    "left join email_doi on article_info.doi = email_doi.doi "
+	    "left join author_doi on article_info.doi = author_doi.doi "
+	    "group by article_info.doi);")
+    cur.execute(query2)  # Query
+
+    query3 = (
+        "insert into email_doi_tables(email, dois) "
+	    "(select email, "
+	 	"array_agg(doi) as dois "
+	    "from email_doi "
+	    "group by email);")
+    cur.execute(query3)  # Query
+
+    query4 = (
+        "insert into pmid_doi(pmid, doi) "
+	    "(select pmid, "
+	 	"id_value as doi "
+	    "from article_id "
+	    "where id_type = 'doi');")
+    cur.execute(query4)  # Query
+
     db.commit()
+    cur.close()
 
 def get_journals():
     # Perform a query.
@@ -98,7 +142,7 @@ def pg_query(db = None, qType = 'fetchone', query = '', arguments = None, commit
         db = get_db()
         closeDb = True
     cur = db.cursor()
-    cur.ececute(query, arguments)
+    cur.execute(query, arguments)
     if qType == 'fetchone':
         retVal = cur.fetchone()
     elif qType == 'fetchall':
