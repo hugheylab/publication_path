@@ -67,7 +67,8 @@ def register():
             #     'SELECT * FROM article_info WHERE pmid = %s', (pmid,)
             # )
             # article = cur.fetchone()
-            article = pg_query(db, 'SELECT * FROM pmid_doi WHERE pmid = %s', (pmid,))
+            pmid = str(pmid)
+            article = pg_query(db, 'fetchone', 'SELECT * FROM pmid_doi WHERE pmid = %s', (pmid,))
             if not article is None:
                 doi = article["doi"]
 
