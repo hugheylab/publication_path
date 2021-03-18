@@ -40,7 +40,7 @@ def register():
             if emails == None or len(emails) == 0:
                 error = "No articles found associated to supplied email(s). Please check your search and try again."
                 flash(error)
-                return render_template('auth/register.html')
+                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
             dois = []
             for email in emails:
                 print(email['dois'])
@@ -54,7 +54,7 @@ def register():
                 if not pmid.isnumeric():
                     error = "One or more value(s) supplied are not numeric PubMed IDs. Please check your search and try again."
                     flash(error)
-                    return render_template('auth/register.html')
+                    return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
                 query_pmids = query_pmids + pmid + ','
             
             query_pmids = query_pmids[:-1] + ')'
@@ -63,7 +63,7 @@ def register():
             if pmid_dois == None or len(pmid_dois) == 0:
                 error = "No articles found associated to supplied pmid(s). Please check your search and try again."
                 flash(error)
-                return render_template('auth/register.html')
+                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
             dois = []
             for pmid_doi in pmid_dois:
                 dois.append(pmid_doi['doi'])
@@ -85,7 +85,7 @@ def register():
         if articles is None or len(articles) == 0:
             error = "No article(s) found with supplied DOI(s). Please try searching again."
             flash(error)
-            return render_template('auth/register.html')
+            return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
         db.close()
         doi_val = query_dois.replace('(', '').replace(')', '').replace('\'', '').replace(' ', '')
         return redirect(url_for('auth.confirm', doi = doi_val, email = ''))
@@ -98,7 +98,9 @@ def confirm():
     if request.method == 'POST' and 'back' in request.form:
         redirect(url_for('auth.register'))
 
-    doi = request.args.get('doi').split(',')[0]
+    url_doi = request.args.get('doi')
+    dois = url_doi.split(',')
+    query_val = str(dois).replace('[', '(').replace(']', ')')
     email = request.args.get('email')
     db = get_db()
 
@@ -106,52 +108,67 @@ def confirm():
     #     'SELECT * FROM article_info WHERE doi = %s', (doi,)
     # )
     # articles = cur.fetchall()
-    articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi = %s', (doi,))
+    articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi IN ' + query_val, ())
     print(articles)
     print(articles[0])
     print(articles[0]["title"])
 
-    doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
+    article_infos = []
 
-    print(doi_child)
+    all_email_ids = '('
 
-    auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
+    for article in articles:
+        doi = article['doi']
+        doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
 
-    email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
+        print(doi_child)
 
-    # cur.execute(
-    #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
-    # )
-    # authors = cur.fetchall()
-    authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, author_affiliation ASC ', ())
-    
-    i = len(authors) - 1
-    while i > 0:
-        if authors[i]['author_name'] == authors[i-1]['author_name']:
-            authors[i-1]['author_affiliation'] = authors[i-1]['author_affiliation'] + '<br/>' + authors[i]['author_affiliation']
-            authors.pop(i)
-        i = i - 1
+        auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
 
-    # cur.execute(
-    #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
-    # )
-    # emails = cur.fetchall()
-    emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
+        email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
+
+        all_email_ids = all_email_ids + str(doi_child['email_ids']).replace('[', '').replace(']', '') + ',' 
+
+        # cur.execute(
+        #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
+        # )
+        # authors = cur.fetchall()
+        authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, author_affiliation ASC ', ())
+        
+        i = len(authors) - 1
+        while i > 0:
+            if authors[i]['author_name'] == authors[i-1]['author_name']:
+                authors[i-1]['author_affiliation'] = authors[i-1]['author_affiliation'] + '<br/>' + authors[i]['author_affiliation']
+                authors.pop(i)
+            i = i - 1
+
+        # cur.execute(
+        #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
+        # )
+        # emails = cur.fetchall()
+        emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
+        article_info_tmp = article_info(article, authors, emails)
+        article_infos.append(article_info_tmp)
 
     error = None
     if request.method == 'POST':
+        all_email_ids = all_email_ids[:-1] + ')'
+        all_emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + all_email_ids, ())
+
         now = datetime.now().timestamp()
         now = round(now)
 
-        for email in emails:
-            print(str(email['email']) + ' found in form: ' + str(email['email'] in request.form))
+        for email in all_emails:
+            doi_email_str = email['doi'] + '-' + email['email']
+            print(doi_email_str + ' found in form: ' + str(doi_email_str in request.form))
         print('REQUEST: ' + str(request.form.__dict__))
 
         # email_urls = list()
         sentEmail = False
 
-        for email in emails:
-            if email['email'] in request.form:
+        for email in all_emails:
+            doi_email_str = email['doi'] + '-' + email['email']
+            if doi_email_str in request.form:
                 for aTmp in articles:
                     if aTmp['doi'] == email['doi']:
                         article = aTmp
@@ -203,7 +220,7 @@ def confirm():
         flash(error)
 
     db.close()
-    return render_template('auth/confirm.html', doi = doi, articles = articles, authors = authors, emails = emails)
+    return render_template('auth/confirm.html', article_infos = article_infos)
 
 @bp.before_app_request
 def load_logged_in_user():
