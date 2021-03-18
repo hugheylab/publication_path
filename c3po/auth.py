@@ -23,7 +23,7 @@ def register():
         db = get_db()
         error = None
         doi_val = request.form['doi']
-        print('doi_va;: '+doi_val)
+        print('doi_val: '+doi_val)
         doi_val = doi_val.replace('   ', '')
         doi_val = doi_val.replace('  ', '')
         doi_val = doi_val.replace(' ', '')
@@ -32,7 +32,7 @@ def register():
         doi_val = doi_val.replace('\r', '')
         query_val = str(doi_val.split(',')).replace('[', '(').replace(']', ')')
         search_type = request.form['search_type']
-        if search_type == 'emails':
+        if search_type == 'email':
             query_emails = query_val
             print('query_emails: ' + query_emails)
 
@@ -44,7 +44,8 @@ def register():
             dois = []
             for email in emails:
                 print(email['dois'])
-                dois.append(email['dois'])
+                for doi_tmp in email['dois']:
+                    dois.append(doi_tmp)
             query_dois = str(dois).replace('[', '(').replace(']', ')')
             print(query_dois)
         elif search_type == 'pmid':
