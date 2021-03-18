@@ -56,8 +56,18 @@ def get_pg_authors_and_emails():
         "from author_affiliation as author_affiliation "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
         "where article_id.id_type = 'doi');")
+    query2 = (
+        "with email_rank AS "
+        "(SELECT id, "
+        "RANK () OVER ( "
+        "PARTITION BY email, doi "
+        "ORDER BY  id DESC NULLS LAST "
+        ") rank_number  "
+        "FROM email_doi ) "
+        "delete from email_doi where id in (select id from email_rank where rank_number > 1);")
     emStart = time.time()
     cur.execute(query)
+    cur.execute(query2)
     emEnd = time.time()
     db.commit()
     cur = db.cursor()

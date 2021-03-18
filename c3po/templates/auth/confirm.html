@@ -15,7 +15,7 @@
       <b>Publication Date:&nbsp;</b>{{ article.pub_date }}<br/>
       <b>Authors:</b><br/>
       {% for author in authors %}
-          {{author['author_name']}}&nbsp;-&nbsp;{{author['author_affiliation']}}<br/>
+          <br/><b>{{author['author_name']}}</b><br/>{{author['author_affiliation'] | safe }}<br/>
       {% endfor %}<br/><br/>
       <h3>Please select the emails to send path entry URLs to:</h3>
       {% for email in emails %}
