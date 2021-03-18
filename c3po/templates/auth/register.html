@@ -7,7 +7,11 @@
 {% block content %}
   <form method="post">
     <label for="doi">Please enter DOI, DOI url, or PubMed ID of paper you wish to register:</label>
-    <input name="doi" autofocus="TRUE" id="doi" required>
+    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required>
+    <select name="searchType" id="searchType">
+      <option value="doi">DOI/Pubmed ID</option>
+      <option value="email">Email</option>
+    </select>
     <input type="submit" value="Register">
   </form>
 {% endblock %}

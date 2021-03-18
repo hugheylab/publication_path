@@ -150,7 +150,7 @@ def confirm():
     #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
     # )
     # authors = cur.fetchall()
-    authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_name ASC, author_affiliation ASC ', ())
+    authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC, author_affiliation ASC ', ())
     
     i = len(authors) - 1
     while i > 0:

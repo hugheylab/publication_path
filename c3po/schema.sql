@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS email_address (
 
 CREATE TABLE author_doi (
   id SERIAL PRIMARY KEY,
+  author_pos INTEGER NOT NULL,
   author_name TEXT NOT NULL,
   author_affiliation TEXT NOT NULL,
   doi TEXT NOT NULL
