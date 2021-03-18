@@ -1,27 +1,26 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Please confirm this is the correct paper!{% endblock %}</h1>
+  <h1>{% block title %}Confirm the paper(s) listed are correct!{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
   <form method="post">
-    {% for article in articles %}
-      <h3>Article Information</h3>
-      <b>Title:&nbsp;</b>{{ article.title }}<br/>
-      <b>DOI:&nbsp;</b>{{ article.doi }}<br/>
-      <b>PMID:&nbsp;</b>{{ article.pmid }}<br/>
-      <b>Journal:&nbsp;</b>{{ article.journal_name }}<br/>
-      <b>Publication Date:&nbsp;</b>{{ article.pub_date }}<br/>
+    {% for article_info in article_infos %}
+      <h3>{{ article_info.article.title }}</h3>
+      <b>DOI:&nbsp;</b>{{ article_info.article.doi }}<br/>
+      <b>PMID:&nbsp;</b>{{ article_info.article.pmid }}<br/>
+      <b>Journal:&nbsp;</b>{{ article_info.article.journal_name }}<br/>
+      <b>Publication Date:&nbsp;</b>{{ article_info.article.pub_date }}<br/>
       <b>Authors:</b><br/>
-      {% for author in authors %}
+      {% for author in article_info.authors %}
           <br/><b>{{author['author_name']}}</b><br/>{{author['author_affiliation'] | safe }}<br/>
       {% endfor %}<br/><br/>
       <h3>Please select the emails to send path entry URLs to:</h3>
-      {% for email in emails %}
-          <input type="checkbox" name="{{email['email']}}" id="{{email['email']}}" />{{email['email']}}<br/>
-      {% endfor %}
-      <br/><input type="submit" value="Confirm">
+      {% for email in article_info.emails %}
+          <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
+      {% endfor %}<hr/>
     {% endfor %}
+    <br/><input type="submit" value="Confirm">
   </form>
 {% endblock %}

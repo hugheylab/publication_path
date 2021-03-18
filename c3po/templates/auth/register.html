@@ -6,12 +6,13 @@
 
 {% block content %}
   <form method="post">
-    <label for="doi">Please enter DOI, DOI url, or PubMed ID of paper you wish to register:</label>
-    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required>
-    <select name="searchType" id="searchType">
-      <option value="doi">DOI/Pubmed ID</option>
-      <option value="email">Email</option>
-    </select>
+    Please enter search values separated by a single comma:
+    <select name="search_type" id="search_type">
+      <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI</option>
+      <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>
+      <option {% if search_type == 'email' %} selected {% endif %} value="email">Email</option>
+    </select><br/><br/>
+    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required >{{ doi }}</textarea><br/><br/>
     <input type="submit" value="Register">
   </form>
 {% endblock %}
