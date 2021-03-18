@@ -16,11 +16,15 @@
       {% for author in article_info.authors %}
           <br/><b>{{author['author_name']}}</b><br/>{{author['author_affiliation'] | safe }}<br/>
       {% endfor %}<br/><br/>
-      <h3>Please select the emails to send path entry URLs to:</h3>
-      {% for email in article_info.emails %}
-          <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
-      {% endfor %}<hr/>
+      {% if article_info.has_emails == True %}
+        <h3>Please select the emails to send path entry URLs to:</h3>
+        {% for email in article_info.emails %}
+            <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
+        {% endfor %}<hr/>
+      {% else %}
+        <h3>No emails found for DOI.</h3>
+      {% endif %}
     {% endfor %}
-    <br/><input type="submit" value="Confirm">
+    <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;<input type="submit" value="Confirm">
   </form>
 {% endblock %}

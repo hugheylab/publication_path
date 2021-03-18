@@ -96,7 +96,7 @@ def register():
 def confirm():
 
     if request.method == 'POST' and 'back' in request.form:
-        redirect(url_for('auth.register'))
+        return redirect(url_for('auth.register'))
 
     url_doi = request.args.get('doi')
     dois = url_doi.split(',')
@@ -147,7 +147,10 @@ def confirm():
         # )
         # emails = cur.fetchall()
         emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
-        article_info_tmp = article_info(article, authors, emails)
+        has_emails = True
+        if emails == None or len(emails) == 0:
+            has_emails = False
+        article_info_tmp = article_info(article, authors, emails, has_emails)
         article_infos.append(article_info_tmp)
 
     error = None
@@ -173,7 +176,7 @@ def confirm():
                     if aTmp['doi'] == email['doi']:
                         article = aTmp
                 sentEmail = True
-                url_id = str(now) + str(hash(email['email']))
+                url_id = str(now) + str(hash(email['email'])) + str(hash(email['doi']))
                 revision = 1
                 # cur.execute(
                 #     'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
@@ -196,7 +199,7 @@ def confirm():
                 <html>
                     <body>
                         <p>Hello,<br/> You have been registered to enter in publication information for the Hughey Lab publication pipeline project! Here is the paper you were registered to enter:<br/>
-                        DOI: """ + doi + """<br/>
+                        DOI: """ + article['doi'] + """<br/>
                         Title: """ + article['title'] + """<br/>
                         Here is your unique URL: http://3.142.187.194:5000/enter/""" + url_id + """</p>
                     </body>
@@ -257,7 +260,8 @@ class email_url:
     self.completed_timestamp = completed_timestamp
 
 class article_info:
-  def __init__(self, article, authors, emails):
+  def __init__(self, article, authors, emails, has_emails):
     self.article = article
     self.authors = authors
     self.emails = emails
+    self.has_emails = has_emails
