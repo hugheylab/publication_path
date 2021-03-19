@@ -6,7 +6,7 @@
 
 {% block content %}
   <form method="post">
-    Please enter search values separated by a single comma:
+    Please enter search values separated by commas:
     <select name="search_type" id="search_type">
       <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI</option>
       <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>

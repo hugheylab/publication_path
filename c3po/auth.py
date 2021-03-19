@@ -127,7 +127,7 @@ def confirm():
 
         email_ids = str(doi_child['email_ids']).replace('[', '(').replace(']', ')')
 
-        all_email_ids = all_email_ids + str(doi_child['email_ids']).replace('[', '').replace(']', '') + ',' 
+        email_ids = email_ids.replace('None, ', '').replace('None)', ')')
 
         # cur.execute(
         #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
@@ -146,7 +146,10 @@ def confirm():
         #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
         # )
         # emails = cur.fetchall()
-        emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
+        emails = None
+        if email_ids != '()':
+            all_email_ids = all_email_ids + str(doi_child['email_ids']).replace('[', '').replace(']', '') + ',' 
+            emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi WHERE id IN ' + email_ids, ())
         has_emails = True
         if emails == None or len(emails) == 0:
             has_emails = False
