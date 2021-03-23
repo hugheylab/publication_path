@@ -109,8 +109,8 @@ def get_pg_article_info():
     query2 = (
         "insert into doi_child_tables(doi, email_ids, author_ids) "
 	    "(select article_info.doi, "
-	 	"array_agg(email_doi.id) as email_ids, "
-	    "array_agg(author_doi.id) as author_ids "
+	 	"array_agg(distinct(email_doi.id)) as email_ids, "
+	    "array_agg(distinct(author_doi.id)) as author_ids "
 	    "from article_info "
 	    "left join email_doi on article_info.doi = email_doi.doi "
 	    "left join author_doi on article_info.doi = author_doi.doi "
