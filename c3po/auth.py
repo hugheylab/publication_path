@@ -48,27 +48,27 @@ def register():
                     dois.append(doi_tmp)
             query_dois = str(dois).replace('[', '(').replace(']', ')')
             print(query_dois)
-        elif search_type == 'pmid':
-            query_pmids = '('
-            for pmid in doi_val.split(','):
-                if not pmid.isnumeric():
-                    error = "One or more value(s) supplied are not numeric PubMed IDs. Please check your search and try again."
-                    flash(error)
-                    return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
-                query_pmids = query_pmids + pmid + ','
+        # elif search_type == 'pmid':
+        #     query_pmids = '('
+        #     for pmid in doi_val.split(','):
+        #         if not pmid.isnumeric():
+        #             error = "One or more value(s) supplied are not numeric PubMed IDs. Please check your search and try again."
+        #             flash(error)
+        #             return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+        #         query_pmids = query_pmids + pmid + ','
             
-            query_pmids = query_pmids[:-1] + ')'
-            print('query_pmids: ' + query_pmids)
-            pmid_dois = pg_query(db, 'fetchall', 'SELECT * FROM pmid_doi WHERE pmid IN ' + query_pmids,())
-            if pmid_dois == None or len(pmid_dois) == 0:
-                error = "No articles found associated to supplied pmid(s). Please check your search and try again."
-                flash(error)
-                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
-            dois = []
-            for pmid_doi in pmid_dois:
-                dois.append(pmid_doi['doi'])
-            query_dois = str(dois).replace('[', '(').replace(']', ')')
-            print(query_dois)
+        #     query_pmids = query_pmids[:-1] + ')'
+        #     print('query_pmids: ' + query_pmids)
+        #     pmid_dois = pg_query(db, 'fetchall', 'SELECT * FROM pmid_doi WHERE pmid IN ' + query_pmids,())
+        #     if pmid_dois == None or len(pmid_dois) == 0:
+        #         error = "No articles found associated to supplied pmid(s). Please check your search and try again."
+        #         flash(error)
+        #         return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+        #     dois = []
+        #     for pmid_doi in pmid_dois:
+        #         dois.append(pmid_doi['doi'])
+        #     query_dois = str(dois).replace('[', '(').replace(']', ')')
+        #     print(query_dois)
         else:
             query_dois = query_val
             if 'doi.org' in doi_val:
@@ -80,10 +80,28 @@ def register():
                 doi_val = doi_val.replace('doi.org/', '')
                 query_dois = str(doi_val.split(',')).replace('[', '(').replace(']', ')')
                 print(query_dois)
+            pmids = '('
+            dois = ''
+            for s in doi_val.split(','):
+                if s.isnumeric():
+                    pmids = pmids + s + ','
+                else:
+                    dois = dois + s + ','
+            if pmids != '(':
+                query_pmids = pmids[:-1] + ')'
+                pmid_dois = pg_query(db, 'fetchall', 'SELECT * FROM pmid_doi WHERE pmid IN ' + query_pmids,())
+                if pmid_dois != None and len(pmid_dois) > 0:
+                    for pmid_doi in pmid_dois:
+                        dois = dois + pmid_doi['doi'] + ','
+            if dois == '':
+                error = "No article(s) found with supplied DOI(s)/Pubmed ID(s). Please try searching again."
+                flash(error)
+                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+            query_dois = str(dois.split(',')).replace('[', '(').replace(']', ')')
 
         articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi IN ' + query_dois,())
         if articles is None or len(articles) == 0:
-            error = "No article(s) found with supplied DOI(s). Please try searching again."
+            error = "No article(s) found with supplied DOI(s)/Pubmed ID(s). Please try searching again."
             flash(error)
             return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
         db.close()
@@ -133,14 +151,21 @@ def confirm():
         #     'SELECT * FROM author_doi WHERE doi = %s', (doi,)
         # )
         # authors = cur.fetchall()
-        authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, author_affiliation ASC ', ())
+        authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, affiliation_pos ASC ', ())
         
-        i = len(authors) - 1
-        while i > 0:
-            if authors[i]['author_name'] == authors[i-1]['author_name']:
-                authors[i-1]['author_affiliation'] = authors[i-1]['author_affiliation'] + '<br/>' + authors[i]['author_affiliation']
-                authors.pop(i)
-            i = i - 1
+        auth_aff_list = []
+        affiliation_list = []
+        for author in authors:
+            if author['author_affiliation'] in affiliation_list:
+                aff_num = affiliation_list.index(author['author_affiliation']) + 1
+            else:
+                affiliation_list.append(author['author_affiliation'])
+                aff_num = len(affiliation_list)
+            if len(auth_aff_list) > 0 and auth_aff_list[len(auth_aff_list) - 1].author['author_pos'] == author['author_pos']:
+                auth_aff_list[len(auth_aff_list) - 1].affiliation_nums.append(aff_num)
+            else:
+                auth_aff = author_affiliations(author, [aff_num])
+                auth_aff_list.append(auth_aff)
 
         # cur.execute(
         #     'SELECT * FROM email_doi WHERE doi = %s', (doi,)
@@ -153,7 +178,7 @@ def confirm():
         has_emails = True
         if emails == None or len(emails) == 0:
             has_emails = False
-        article_info_tmp = article_info(article, authors, emails, has_emails)
+        article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list)
         article_infos.append(article_info_tmp)
 
     error = None
@@ -263,8 +288,14 @@ class email_url:
     self.completed_timestamp = completed_timestamp
 
 class article_info:
-  def __init__(self, article, authors, emails, has_emails):
+  def __init__(self, article, authors, emails, has_emails, affiliation_list):
     self.article = article
     self.authors = authors
     self.emails = emails
     self.has_emails = has_emails
+    self.affiliation_list = affiliation_list
+
+class author_affiliations:
+    def __init__(self, author, affiliation_nums):
+        self.author = author
+        self.affiliation_nums = affiliation_nums

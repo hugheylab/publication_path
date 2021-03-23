@@ -20,6 +20,7 @@ CREATE TABLE author_doi (
   id SERIAL PRIMARY KEY,
   author_pos INTEGER,
   author_name TEXT NOT NULL,
+  affiliation_pos INTEGER,
   author_affiliation TEXT NOT NULL,
   doi TEXT NOT NULL
 );

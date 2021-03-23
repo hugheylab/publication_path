@@ -6,11 +6,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <nav>
   <h1>C(3P)O: Chronological Paper Publication Pipeline Order</h1>
-  <ul>
-    {% if g.url_id %}
-      <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
-    {% endif %}
-  </ul>
 </nav>
 <section class="content">
   <header>

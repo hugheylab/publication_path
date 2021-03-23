@@ -38,7 +38,7 @@ def get_pg_authors_and_emails():
 
     # Perform a query.
     query = (
-        "INSERT INTO author_doi(author_pos, author_name, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name) as author_name, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
+        "INSERT INTO author_doi(author_pos, author_name, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name) as author_name, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
         "from author_affiliation as author_affiliation "
         "left join author as author on "
         "author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos "

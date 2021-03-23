@@ -1,30 +1,85 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Confirm the paper(s) listed are correct!{% endblock %}</h1>
+  <h1>{% block title %}Confirm the paper(s) listed are correct, and select all exmail addresses to send publication path entry links to!{% endblock %}</h1>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .collapsible {
+      background-color: #777;
+      color: white;
+      cursor: pointer;
+      padding: 18px;
+      width: 100%;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 15px;
+    }
+    
+    .active, .collapsible:hover {
+      background-color: #555;
+    }
+    
+    .content2 {
+      padding: 0 18px;
+      display: none;
+      overflow: hidden;
+      background-color: #f1f1f1;
+    }
+    </style>
 {% endblock %}
 
 {% block content %}
   <form method="post">
-    {% for article_info in article_infos %}
-      <h3>{{ article_info.article.title }}</h3>
-      <b>DOI:&nbsp;</b>{{ article_info.article.doi }}<br/>
-      <b>PMID:&nbsp;</b>{{ article_info.article.pmid }}<br/>
-      <b>Journal:&nbsp;</b>{{ article_info.article.journal_name }}<br/>
-      <b>Publication Date:&nbsp;</b>{{ article_info.article.pub_date }}<br/>
-      <b>Authors:</b><br/>
-      {% for author in article_info.authors %}
-          <br/><b>{{author['author_name']}}</b><br/>{{author['author_affiliation'] | safe }}<br/>
-      {% endfor %}<br/><br/>
-      {% if article_info.has_emails == True %}
-        <h3>Please select the emails to send path entry URLs to:</h3>
-        {% for email in article_info.emails %}
-            <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
-        {% endfor %}<hr/>
-      {% else %}
-        <h3>No emails found for DOI.</h3>
-      {% endif %}
-    {% endfor %}
+    <table style="width:100%;border-spacing: 0px;">
+      {% for article_info in article_infos %}
+        <tr>
+          <td style="width: 75%; border: 1px solid black;">
+            <h3>{{ article_info.article.title }}</h3>
+            <b>Journal:&nbsp;</b>{{ article_info.article.journal_name }}<br/>
+            <b>Publication Date:&nbsp;</b>{{ article_info.article.pub_date }}<br/>
+            {% for author in article_info.authors %}
+                {{author.author['author_name']}}<sup>{{author.affiliation_nums}}</sup>{% if not loop.last %},&nbsp; {% endif %}
+            {% endfor %}<br/>
+            <button type="button" class="collapsible">More information</button>
+            <div class="content2">
+              <b>Affiliations:&nbsp;</b><br/>
+              {% for affiliation in article_info.affiliation_list %}
+                  <br/>{{ loop.index }}.&nbsp;{{affiliation}}<br/>
+              {% endfor %}<br/>
+              <b>DOI:&nbsp;</b>{{ article_info.article.doi }}<br/>
+              <b>PMID:&nbsp;</b>{{ article_info.article.pmid }}<br/>
+            </div>
+          </td>
+          <td style="width: 25%; border: 1px solid black; vertical-align: top;">
+            {% if article_info.has_emails == True %}
+              <h3>Please select the emails to send path entry URLs to:</h3>
+              {% for email in article_info.emails %}
+                  <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
+              {% endfor %}
+            {% else %}
+              <h3>No emails found for DOI.</h3>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
     <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;<input type="submit" value="Confirm">
   </form>
+  <script>
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+    
+    for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      });
+    }
+    </script>
 {% endblock %}
