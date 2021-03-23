@@ -78,7 +78,7 @@
         </tr>
       {% endfor %}
     </table>
-    <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;<input type="submit" value="Confirm">
+    <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;{% if all_has_emails == True %}<input type="submit" value="Confirm">{% endif %}
   </form>
   <script>
     var coll = document.getElementsByClassName("collapsible");

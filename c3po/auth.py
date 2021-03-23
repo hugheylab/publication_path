@@ -140,6 +140,8 @@ def confirm():
 
     all_email_ids = '('
 
+    all_has_emails = True
+
     for article in articles:
         doi = article['doi']
         doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (doi,))
@@ -183,6 +185,7 @@ def confirm():
         has_emails = True
         if emails == None or len(emails) == 0:
             has_emails = False
+        all_has_emails = (all_has_emails and has_emails)
         article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list)
         article_infos.append(article_info_tmp)
 
@@ -256,7 +259,7 @@ def confirm():
         flash(error)
 
     db.close()
-    return render_template('auth/confirm.html', article_infos = article_infos, email_list = email_list)
+    return render_template('auth/confirm.html', article_infos = article_infos, email_list = email_list, all_has_emails = all_has_emails)
 
 @bp.before_app_request
 def load_logged_in_user():
