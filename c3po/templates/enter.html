@@ -35,18 +35,20 @@ $(document).ready(function ()
   $('.js-example-basic-single').select2();
 });
 </script>
-  <p>Hello!</p>
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
   {% endif %}
-  <h3>Article Info</h3>
-  <b>Title:&nbsp;</b>{{ article_info.title }}<br/>
+  <h3>{{ article_info.title }}</h3>
   <b>DOI:&nbsp;</b>{{ article_info.doi }}<br/>
   <b>Publication Date:&nbsp;</b>{{ article_info.pub_date }}<br/>
   <b>Authors:</b><br/>
   {% for author in author_doi %}
-      {{author['author_name']}}&nbsp;-&nbsp;{{author['author_affiliation']}}<br/>
-  {% endfor %}
+      {{author.author['author_name']}}<sup>{{author.affiliation_nums}}</sup>{% if not loop.last %},&nbsp; {% endif %}
+  {% endfor %}<br/>
+  <b>Affiliations:&nbsp;</b><br/>
+  {% for affiliation in affiliation_list %}
+      <br/>{{ loop.index }}.&nbsp;{{affiliation}}<br/>
+  {% endfor %}<br/>
   {% if allow_enter == True and has_completed == True %}
     <h3 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h3>
     <table>

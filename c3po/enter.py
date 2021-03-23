@@ -15,6 +15,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from c3po.db import get_db
 from c3po.db import pg_query
+from c3po.auth import author_affiliations
 
 bp = Blueprint('enter', __name__, url_prefix='/enter')
 
@@ -54,7 +55,21 @@ def enter(url_id):
     doi_child = pg_query(db, 'fetchone', 'SELECT * FROM doi_child_tables WHERE doi = %s', (email_url["doi"],))
     print(doi_child)
     auth_ids = str(doi_child['author_ids']).replace('[', '(').replace(']', ')')
-    author_doi = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids, ())
+    authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, affiliation_pos ASC ', ())
+        
+    auth_aff_list = []
+    affiliation_list = []
+    for author in authors:
+        if author['author_affiliation'] in affiliation_list:
+            aff_num = affiliation_list.index(author['author_affiliation']) + 1
+        else:
+            affiliation_list.append(author['author_affiliation'])
+            aff_num = len(affiliation_list)
+        if len(auth_aff_list) > 0 and auth_aff_list[len(auth_aff_list) - 1].author['author_pos'] == author['author_pos']:
+            auth_aff_list[len(auth_aff_list) - 1].affiliation_nums.append(aff_num)
+        else:
+            auth_aff = author_affiliations(author, [aff_num])
+            auth_aff_list.append(auth_aff)
 
     # cur.execute(
     #     'SELECT * FROM article_info WHERE doi = %s', (email_url["doi"],)
@@ -167,7 +182,7 @@ def enter(url_id):
 
     
     db.close()
-    return render_template('enter.html', email_url = email_url, journal_opts = journal_opts, article_info = article_info, author_doi = author_doi, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0))
+    return render_template('enter.html', email_url = email_url, journal_opts = journal_opts, article_info = article_info, author_doi = auth_aff_list, affiliation_list = affiliation_list, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0))
 
 class paper_path:
     def __init__(self, idx, url_param_id, step, journal, submit_date, error, show_error):

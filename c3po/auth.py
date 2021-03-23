@@ -30,9 +30,11 @@ def register():
         doi_val = doi_val.replace('\r\n', '')
         doi_val = doi_val.replace('\n', '')
         doi_val = doi_val.replace('\r', '')
+        email_val = ''
         query_val = str(doi_val.split(',')).replace('[', '(').replace(']', ')')
         search_type = request.form['search_type']
         if search_type == 'email':
+            email_val = doi_val
             query_emails = query_val
             print('query_emails: ' + query_emails)
 
@@ -106,7 +108,7 @@ def register():
             return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
         db.close()
         doi_val = query_dois.replace('(', '').replace(')', '').replace('\'', '').replace(' ', '')
-        return redirect(url_for('auth.confirm', doi = doi_val, email = ''))
+        return redirect(url_for('auth.confirm', doi = doi_val, email = email_val))
     
     return render_template('auth/register.html')
 
@@ -120,6 +122,9 @@ def confirm():
     dois = url_doi.split(',')
     query_val = str(dois).replace('[', '(').replace(']', ')')
     email = request.args.get('email')
+    email_list = []
+    if email != None and email != '':
+        email_list = email.split(',')
     db = get_db()
 
     # cur.execute(
@@ -190,15 +195,15 @@ def confirm():
         now = round(now)
 
         for email in all_emails:
-            doi_email_str = email['doi'] + '-' + email['email']
+            doi_email_str = email['doi'] + '---' + email['email']
             print(doi_email_str + ' found in form: ' + str(doi_email_str in request.form))
-        print('REQUEST: ' + str(request.form.__dict__))
+        print('REQUEST: ' + str(request.form))
 
         # email_urls = list()
         sentEmail = False
 
         for email in all_emails:
-            doi_email_str = email['doi'] + '-' + email['email']
+            doi_email_str = email['doi'] + '---' + email['email']
             if doi_email_str in request.form:
                 for aTmp in articles:
                     if aTmp['doi'] == email['doi']:
@@ -251,7 +256,7 @@ def confirm():
         flash(error)
 
     db.close()
-    return render_template('auth/confirm.html', article_infos = article_infos)
+    return render_template('auth/confirm.html', article_infos = article_infos, email_list = email_list)
 
 @bp.before_app_request
 def load_logged_in_user():

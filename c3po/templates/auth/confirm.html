@@ -30,8 +30,22 @@
 {% endblock %}
 
 {% block content %}
+  
   <form method="post">
     <table style="width:100%;border-spacing: 0px;">
+      <tr>
+        <td style="width: 75%; border: 1px solid black;">
+          Article Information
+        </td>
+        <td style="width: 25%; border: 1px solid black; vertical-align: top;">
+            {% if email_list %}
+            Toggle to select/deselect all matching emails:<br/>
+            {% for email in email_list %}
+              <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
+            {% endfor %}
+          {% endif %}
+        </td>
+      </tr>
       {% for article_info in article_infos %}
         <tr>
           <td style="width: 75%; border: 1px solid black;">
@@ -55,7 +69,7 @@
             {% if article_info.has_emails == True %}
               <h3>Please select the emails to send path entry URLs to:</h3>
               {% for email in article_info.emails %}
-                  <input type="checkbox" name="{{article_info.article.doi + '-' + email.email}}" id="{{article_info.article.doi + '-' + email.email}}" />{{email.email}}<br/>
+                  <input class="checkable" type="checkbox" name="{{article_info.article.doi + '---' + email.email}}" id="{{article_info.article.doi + '---' + email.email}}" />&nbsp;{{email.email}}<br/>
               {% endfor %}
             {% else %}
               <h3>No emails found for DOI.</h3>
@@ -80,6 +94,20 @@
           content.style.display = "block";
         }
       });
+    }
+    </script>
+  <script>
+    function selectAll(source) {
+      var email = source.getAttribute("name");
+      var elmnts = document.getElementsByTagName("input");
+      for (var i = 0; i < elmnts.length;i++) {
+        if (elmnts[i].getAttribute("type") == "checkbox" && elmnts[i].getAttribute("name").includes("---")) {
+          tmp_arr = elmnts[i].getAttribute("name").split("---");
+          if (email == tmp_arr[1]) {
+            elmnts[i].checked = source.checked;
+          }
+        }
+      }
     }
     </script>
 {% endblock %}
