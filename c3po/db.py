@@ -82,13 +82,15 @@ def get_pg_article_info():
     # Perform a query.
     query = (
         "with article_tmp as "
-        "(select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, article.pub_date as pub_date  "
+        "(select article.pmid as pmid, article.title as title, journal.journal_name as journal_name, article_id.id_value as doi, pub_history.pub_date as pub_date  "
         "from article as article  "
+        "left join pub_history as pub_history  "
+        "on article.pmid = pub_history.pmid  "
         "left join article_id as article_id  "
         "on article.pmid = article_id.pmid  "
         "left join journal as journal  "
         "on article.pmid = journal.pmid  "
-        "where article_id.id_type = 'doi' and article_id.id_value != '' and article_id.id_value != ' ' and article_id.id_value IS NOT NULL) "
+        "where article_id.id_type = 'doi' and article_id.id_value != '' and article_id.id_value != ' ' and article_id.id_value IS NOT NULL and pub_history.pub_status = 'pubmed') "
         ", article_rank AS "
         "( "
             "SELECT "

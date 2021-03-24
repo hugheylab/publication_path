@@ -81,7 +81,7 @@ def enter(url_id):
     #     'SELECT * FROM journal_name', ()
     # )
     # journal_opts = cur.fetchall()
-    journal_opts = pg_query(db, 'fetchall', 'SELECT * FROM journal_name', ())
+    journal_opts = pg_query(db, 'fetchall', 'SELECT * FROM journal_name ORDER BY journal_name ASC', ())
     
     confirm = False
     

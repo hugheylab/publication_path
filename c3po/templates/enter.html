@@ -32,23 +32,65 @@ $(document).ready(function ()
 <script>
   $(document).ready(function ()
 {
-  $('.js-example-basic-single').select2();
+  function sortCustom(data) {
+    // If there are no search terms, return all of the data
+    function array_move(arr, old_index, new_index) {
+      if (new_index >= arr.length) {
+          var k = new_index - arr.length + 1;
+          while (k--) {
+              arr.push(undefined);
+          }
+      }
+      arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
+    };
+
+    for (var i = 0; i <= data.length; i++) {
+        var result = data[i];
+
+        if (typeof result !== "undefined" && result.text === params_text) {
+            array_move(data, i, 0);
+        }
+    }
+
+    return data;
+  }
+  function matchCustom(params, data) {
+      // If there are no search terms, return all of the data
+    if ($.trim(params.term) === '') {
+      return null;
+    }
+
+    // Skip if there is no 'children' property
+    if (typeof data.text === 'undefined') {
+      return null;
+    }
+
+    const regex = /&/g
+    data_text = data.text.replace(regex, 'and')
+    params_text = params.term.replace(regex, 'and')
+    if (data_text.toUpperCase().indexOf(params_text.toUpperCase()) == 0) {
+      return data
+    }
+
+    // Return `null` if the term should not be displayed
+    return null;
+  }
+  $('.js-example-basic-single').select2({
+    matcher: matchCustom
+    //sorter: sortCustom
+  });
 });
 </script>
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
   {% endif %}
   <h3>{{ article_info.title }}</h3>
-  <b>DOI:&nbsp;</b>{{ article_info.doi }}<br/>
-  <b>Publication Date:&nbsp;</b>{{ article_info.pub_date }}<br/>
-  <b>Authors:</b><br/>
+  {{ article_info.journal_name }}<br/>
+  {{ article_info.pub_date }}<br/>
   {% for author in author_doi %}
-      {{author.author['author_name']}}<sup>{{author.affiliation_nums}}</sup>{% if not loop.last %},&nbsp; {% endif %}
+      {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
   {% endfor %}<br/>
-  <b>Affiliations:&nbsp;</b><br/>
-  {% for affiliation in affiliation_list %}
-      <br/>{{ loop.index }}.&nbsp;{{affiliation}}<br/>
-  {% endfor %}<br/>
+  {{ article_info.doi }}<br/>
   {% if allow_enter == True and has_completed == True %}
     <h3 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h3>
     <table>
@@ -86,9 +128,12 @@ $(document).ready(function ()
   {% endif %}
   <h3>Step Entry</h3>
   <form id="package_form" action="" method="post">
-    <table>
+    <table style="width:100%;">
       <tr>
-        <td style="width:25%">
+        <td style="width:5%">
+          &nbsp;
+        </td>
+        <td style="width:30%">
           Step
         </td>
         <td style="width:25%">
@@ -97,12 +142,14 @@ $(document).ready(function ()
         <td style="width:40%">
           Journal
         </td>
-        <td style="width:10%">
-          &nbsp;
-        </td>
       </tr>
         {% for path_item in session["path_list"] %}
           <tr>
+            <td>
+              {% if not loop.last and confirm == False and allow_enter == True %}
+                <input type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+              {% endif %}
+            </td>
             <td>
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
@@ -124,7 +171,7 @@ $(document).ready(function ()
             </td>
             <td>
               {% if not loop.last and confirm == False and allow_enter == True %}
-                <select class="js-example-basic-single" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
+                <select class="js-example-basic-single" style="width: 100%;" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
                   <option value="">--None Selected--</option>
                   {% for journal_opt in journal_opts %}
                     {% if journal_opt.journal_name == path_item.journal %}
@@ -139,18 +186,13 @@ $(document).ready(function ()
                 {{ path_item.journal }}
               {% endif %}
             </td>
-            <td>
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                <input type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
-              {% endif %}
-            </td>
           </tr>
         {% endfor %}
-    </table>
+    </table><br/>
     {% if confirm == False and allow_enter == True %}
       <div class="panel-body">
         <input type="submit" name="add_item" value="Add Step">
-      </div>
+      </div><br/>
       <div class="panel-body">
         <input type="submit" name="submit" value="Submit">
       </div>
@@ -158,7 +200,7 @@ $(document).ready(function ()
       {% if allow_enter == True %}
         <div class="panel-body">
           <input type="submit" name="cancel" value="Cancel">
-        </div>
+        </div><br/>
         <div class="panel-body">
           <input type="submit" name="confirm" value="Confirm">
         </div>

@@ -19,6 +19,14 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
 
+    if request.method == 'GET':
+        url_doi = request.args.get('doi')
+        email = request.args.get('email')
+        if email != None and email != '':
+            return render_template('auth/register.html', doi = email, search_type = 'email')
+        elif url_doi != None and url_doi != '':
+            return render_template('auth/register.html', doi = url_doi, search_type = 'doi')
+
     if request.method == 'POST':
         db = get_db()
         error = None
@@ -115,13 +123,12 @@ def register():
 @bp.route('/confirm', methods=('GET', 'POST'))
 def confirm():
 
-    if request.method == 'POST' and 'back' in request.form:
-        return redirect(url_for('auth.register'))
-
     url_doi = request.args.get('doi')
     dois = url_doi.split(',')
     query_val = str(dois).replace('[', '(').replace(']', ')')
     email = request.args.get('email')
+    if request.method == 'POST' and 'back' in request.form:
+        return redirect(url_for('auth.register', doi = url_doi, email = email))
     email_list = []
     if email != None and email != '':
         email_list = email.split(',')

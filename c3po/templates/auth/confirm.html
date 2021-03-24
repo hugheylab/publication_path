@@ -1,15 +1,14 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Confirm the paper(s) listed are correct, and select all exmail addresses to send publication path entry links to!{% endblock %}</h1>
+  <h1>{% block title %}Confirm the paper(s) listed are correct, and select all email addresses to send publication path entry links to!{% endblock %}</h1>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     .collapsible {
-      background-color: #777;
-      color: white;
+      background-color: #f1f1f1;
+      color: black;
       cursor: pointer;
       padding: 18px;
-      width: 100%;
       border: none;
       text-align: left;
       outline: none;
@@ -17,14 +16,12 @@
     }
     
     .active, .collapsible:hover {
-      background-color: #555;
+      background-color: #fff;
     }
     
     .content2 {
-      padding: 0 18px;
       display: none;
       overflow: hidden;
-      background-color: #f1f1f1;
     }
     </style>
 {% endblock %}
@@ -34,10 +31,10 @@
   <form method="post">
     <table style="width:100%;border-spacing: 0px;">
       <tr>
-        <td style="width: 75%; border: 1px solid black;">
+        <td style="width: 75%; border-bottom: 1px solid black;">
           Article Information
         </td>
-        <td style="width: 25%; border: 1px solid black; vertical-align: top;">
+        <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
             Toggle to select/deselect all matching emails:<br/>
             {% for email in email_list %}
@@ -48,31 +45,30 @@
       </tr>
       {% for article_info in article_infos %}
         <tr>
-          <td style="width: 75%; border: 1px solid black;">
+          <td style="width: 75%; border-bottom: 1px solid black;">
             <h3>{{ article_info.article.title }}</h3>
-            <b>Journal:&nbsp;</b>{{ article_info.article.journal_name }}<br/>
-            <b>Publication Date:&nbsp;</b>{{ article_info.article.pub_date }}<br/>
+            {{ article_info.article.journal_name }}<br/>
+            {{ article_info.article.pub_date }}<br/>
             {% for author in article_info.authors %}
-                {{author.author['author_name']}}<sup>{{author.affiliation_nums}}</sup>{% if not loop.last %},&nbsp; {% endif %}
+                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
             {% endfor %}<br/>
-            <button type="button" class="collapsible">More information</button>
+            <button type="button" class="collapsible">Show/Hide more information</button>
             <div class="content2">
-              <b>Affiliations:&nbsp;</b><br/>
+              Affiliations:<br/>
               {% for affiliation in article_info.affiliation_list %}
-                  <br/>{{ loop.index }}.&nbsp;{{affiliation}}<br/>
+                  {{ loop.index }}.&nbsp;{{affiliation}}<br/>
               {% endfor %}<br/>
-              <b>DOI:&nbsp;</b>{{ article_info.article.doi }}<br/>
-              <b>PMID:&nbsp;</b>{{ article_info.article.pmid }}<br/>
+              DOI:&nbsp;{{ article_info.article.doi }}<br/>
+              PMID:&nbsp;{{ article_info.article.pmid }}<br/>
             </div>
           </td>
-          <td style="width: 25%; border: 1px solid black; vertical-align: top;">
+          <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if article_info.has_emails == True %}
-              <h3>Please select the emails to send path entry URLs to:</h3>
               {% for email in article_info.emails %}
                   <input class="checkable" type="checkbox" name="{{article_info.article.doi + '---' + email.email}}" id="{{article_info.article.doi + '---' + email.email}}" />&nbsp;{{email.email}}<br/>
               {% endfor %}
             {% else %}
-              <h3>No emails found for DOI.</h3>
+              <h3>No emails addresses found.</h3>
             {% endif %}
           </td>
         </tr>
