@@ -147,7 +147,7 @@ def confirm():
 
     all_email_ids = '('
 
-    all_has_emails = True
+    all_has_emails = False
 
     for article in articles:
         doi = article['doi']
@@ -192,7 +192,11 @@ def confirm():
         has_emails = True
         if emails == None or len(emails) == 0:
             has_emails = False
-        all_has_emails = (all_has_emails and has_emails)
+        else:
+            for email_tmp in emails:
+                if not email_tmp['email'] in email_list:
+                    email_list.append(email_tmp['email'])
+        all_has_emails = (all_has_emails or has_emails)
         article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list)
         article_infos.append(article_info_tmp)
 
