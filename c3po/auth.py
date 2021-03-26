@@ -229,13 +229,13 @@ def confirm():
                 #     'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,)
                 # )
                 # emUrl = cur.fetchone()
-                emUrl = pg_query(db, 'fetchone', 'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], doi,))
+                emUrl = pg_query(db, 'fetchone', 'SELECT * FROM email_url WHERE email = %s AND doi = %s ORDER BY revision DESC LIMIT 1', (email['email'], email['doi'],))
                 if not emUrl is None:
                     revision = int(emUrl['revision']) + 1
                 # email_url_tmp = email_url(email = author['email'], url_param_id = url_id, doi = doi, revision = '1', completed_timestamp = '')
                 sql = ''' INSERT INTO email_url(email,url_param_id,doi,revision)
                 VALUES(%s,%s,%s,%s) '''
-                email_url_tmp = (email['email'], url_id, doi, revision)
+                email_url_tmp = (email['email'], url_id, email['doi'], revision)
                 # cur = db.cursor()
                 # cur.execute(sql, email_url_tmp)
                 # db.commit()
@@ -253,7 +253,7 @@ def confirm():
                 </html>
                 """
 
-                send_email(receiver_email = email['email'], message_text = message_text, subject = ('Hughey Lab Publication Path Entry For DOI ' + doi), db = db)
+                send_email(receiver_email = email['email'], message_text = message_text, subject = ('Hughey Lab Publication Path Entry For DOI ' + article['doi']), db = db)
 
                 # email_urls.append(email_url_tmp)
         if sentEmail == True:
