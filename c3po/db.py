@@ -153,7 +153,7 @@ def add_email(email, doi):
     db = get_db()
 
     # Perform a query.
-    pg_query(db, 'insert', 'INSERT INTO email_doi(doi, email) values(%s, %s)',(doi, email))
+    pg_query(db, 'insert', 'INSERT INTO email_doi(doi, email, automated) values(%s, %s, FALSE)',(doi, email))
     pg_query(db, 'delete', 'DELETE FROM doi_child_tables where doi = %s ', (doi,))
     pg_query(db, 'delete', 'DELETE FROM email_doi_tables where email = %s ', (email,))
 
