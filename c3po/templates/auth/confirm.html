@@ -31,12 +31,12 @@
   <form method="post">
     <table style="width:100%;border-spacing: 0px;">
       <tr>
-        <td style="width: 75%; border-bottom: 1px solid black;">
-          Article Information
+        <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
+          <b>Article Information</b>
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
-            Toggle to select/deselect all matching emails:<br/>
+            <b>Toggle to select/deselect all matching emails:</b><br/>
             {% for email in email_list %}
               <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
             {% endfor %}
@@ -47,6 +47,7 @@
         <tr>
           <td style="width: 75%; border-bottom: 1px solid black;">
             <h3>{{ article_info.article.title }}</h3>
+            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/><br/>{% endif %}
             {{ article_info.article.journal_name }}<br/>
             {{ article_info.article.pub_date }}<br/>
             {% for author in article_info.authors %}

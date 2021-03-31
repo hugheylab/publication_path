@@ -166,7 +166,11 @@ def confirm():
         # )
         # authors = cur.fetchall()
         authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, affiliation_pos ASC ', ())
+
+        completed_urls = pg_query(db, 'fetchall', 'SELECT * FROM email_url WHERE doi = %s and completed_timestamp IS NOT NULL ORDER BY completed_timestamp DESC LIMIT 1 ', (doi,))
         
+        has_path = (completed_urls != None and len(completed_urls) > 0)
+
         auth_aff_list = []
         affiliation_list = []
         for author in authors:
@@ -197,7 +201,7 @@ def confirm():
                 if not email_tmp['email'] in email_list:
                     email_list.append(email_tmp['email'])
         all_has_emails = (all_has_emails or has_emails)
-        article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list)
+        article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list, has_path)
         article_infos.append(article_info_tmp)
 
     error = None
@@ -307,12 +311,13 @@ class email_url:
     self.completed_timestamp = completed_timestamp
 
 class article_info:
-  def __init__(self, article, authors, emails, has_emails, affiliation_list):
+  def __init__(self, article, authors, emails, has_emails, affiliation_list, has_path):
     self.article = article
     self.authors = authors
     self.emails = emails
     self.has_emails = has_emails
     self.affiliation_list = affiliation_list
+    self.has_path = has_path
 
 class author_affiliations:
     def __init__(self, author, affiliation_nums):
