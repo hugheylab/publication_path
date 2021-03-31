@@ -149,6 +149,38 @@ def get_journals():
     cur.execute(query,)
     db.commit()
 
+def add_email(email, doi):
+    db = get_db()
+
+    # Perform a query.
+    pg_query(db, 'insert', 'INSERT INTO email_doi(doi, email) values(%s, %s)',(doi, email))
+    pg_query(db, 'delete', 'DELETE FROM doi_child_tables where doi = %s ', (doi,))
+    pg_query(db, 'delete', 'DELETE FROM email_doi_tables where email = %s ', (email,))
+
+    query2 = (
+        "insert into doi_child_tables(doi, email_ids, author_ids) "
+	    "(select article_info.doi, "
+	 	"array_remove(array_agg(distinct(email_doi.id)), NULL) as email_ids, "
+	    "array_agg(distinct(author_doi.id)) as author_ids "
+	    "from article_info "
+	    "left join email_doi on article_info.doi = email_doi.doi "
+	    "left join author_doi on article_info.doi = author_doi.doi "
+        "where article_info.doi = %s "
+	    "group by article_info.doi);")
+    pg_query(db, 'insert', query2, (doi,))
+
+    query3 = (
+        "insert into email_doi_tables(email, dois) "
+	    "(select email, "
+	 	"array_agg(doi) as dois "
+	    "from email_doi "
+	    "where email = %s "
+	    "group by email);")
+    pg_query(db, 'insert', query3, (email,))
+
+    db.commit()
+    db.close()
+
 
 def pg_query(db = None, qType = 'fetchone', query = '', arguments = None, commit = True, closeDb = False):
     if db is None :
@@ -178,6 +210,15 @@ def init_db_command():
     init_db('schema.sql')
     click.echo('Initialized the database.')
 
+@click.command('add-email')
+@click.argument('email')
+@click.argument('doi')
+@with_appcontext
+def add_email_command(email, doi):
+    """Add email to specific doi."""
+    add_email(email, doi)
+    click.echo('Added email.')
+
 @click.command('init-db-postgres')
 @with_appcontext
 def init_db_postgres_command():
@@ -192,6 +233,7 @@ def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
     app.cli.add_command(init_db_postgres_command)
+    app.cli.add_command(add_email_command)
 
 def config(filename='c3po/database.ini', section='postgresql'):
     # create a parser
