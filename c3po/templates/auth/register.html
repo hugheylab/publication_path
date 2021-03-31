@@ -7,11 +7,17 @@
 {% block content %}
   <form method="post">
     Please enter search values separated by commas:
-    <select name="search_type" id="search_type">
+    <input type="radio" id="email" name="search_type" value="email"
+      {% if search_type == 'email' or search_type == Null %} checked {% endif %}>
+    <label for="email">Email</label>
+    <input type="radio" id="doi" name="search_type" value="doi"
+      {% if search_type == 'doi' %} checked {% endif %}>
+    <label for="doi">DOI/ Pubmed ID</label>
+    <!--<select name="search_type" id="search_type">
       <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI/ Pubmed ID</option>
-      <!--<option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>-->
+      <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>
       <option {% if search_type == 'email' %} selected {% endif %} value="email">Email</option>
-    </select><br/><br/>
+    </select>--><br/><br/>
     <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required >{{ doi }}</textarea><br/><br/>
     <input type="submit" value="Register">
   </form>
