@@ -27,12 +27,18 @@
 {% endblock %}
 
 {% block content %}
-  
   <form method="post">
     <table style="width:100%;border-spacing: 0px;">
       <tr>
         <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
-          <b>Article Information</b>
+          <!--<b>Article Information</b>-->
+          <b>Instructions: </b>
+          <ol>
+            <li>Select each email per article you wish to send a link to. Selecing an email to the right will select all instances of that email found.</li>
+            <li>You can click "Show/Hide Information" to view additional information (DOI, affiliations, etc.).</li>
+            <li>If you need to go back to search again, click "Cancel" to return to the search screen and refine your search.</li>
+            <li>Once you have selected all email/article pairs to send links to, click "Confirm" to generate and send out the unique URLs.</li>
+          </ol>
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
