@@ -17,4 +17,7 @@ def thanks(thanks_type):
     if thanks_type == "submission":
         text = 'Thank you for submitting your publication information!'
 
-    return render_template('thanks.html', text = text)
+    if request.method == 'POST':
+        return redirect(url_for('auth.register'))
+
+    return render_template('thanks.html', text = text, thanks_type = thanks_type)

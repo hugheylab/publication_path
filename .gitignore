@@ -6,3 +6,5 @@ venv
 .vscode
 c3po/authorization_files
 */database.ini
+.Rproj.user
+publication_path.Rproj

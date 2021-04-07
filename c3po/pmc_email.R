@@ -2,8 +2,13 @@ library('data.table')
 library('rentrez')
 library('stringr')
 library('xml2')
+library('RPostgres')
+library('DBI')
 
 # get PMCID from pmdb
+
+con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
+df = DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid ASC;')
 
 ##########
 # simpler for some papers, but email address(es) cannot be linked to author names
@@ -12,7 +17,7 @@ pmcid = 'PMC7815206'
 # pmcid = 'PMC7046182'
 # pmcid = 'PMC6857501'
 
-a1 = entrez_fetch(db = 'pmc', id = pmcid, rettype = 'xml')
+a1 = entrez_fetch(db = 'pmc', id = df$id_value, rettype = 'xml')
 write(a1, file.choose(new = TRUE))
 a2 = read_xml(a1)
 # xml_text(xml_find_first(a2, './/author-notes'))
