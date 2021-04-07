@@ -83,19 +83,19 @@ $(document).ready(function ()
 </script>
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
-    <b>Instructions: </b>
-    <ol>
-      <li>If you realize you made a mistake, click "Cancel" to return to the entry screen.</li>
-      <li>Once you have confirmed all streps are entered correctly, click "Confirm" to finish submitting the information.</li>
-    </ol>
     {% else %}
     <b>Instructions: </b>
     <ol>
-      <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission.</li>
-      <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
-      <li>Add/delete steps as necessary.</li>
-      <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
-      <li>If no errors are found, you will be taken to a final confirmation screen.</li>
+      {% if confirm == False %}
+        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission.</li>
+        <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
+        <li>Add/delete steps as necessary.</li>
+        <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
+        <li>If no errors are found, you will be taken to a final confirmation screen.</li>
+      {% else %}
+        <li>If you realize you made a mistake, click "Cancel" to return to the entry screen.</li>
+        <li>Once you have confirmed all streps are entered correctly, click "Confirm" to finish submitting the information.</li>
+      {% endif %}
     </ol>
   {% endif %}
   <h3>{{ article_info.title }}</h3>
