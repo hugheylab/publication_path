@@ -9,3 +9,5 @@ c3po/authorization_files
 .Rproj.user
 publication_path.Rproj
 *entrez.xml
+.RData
+.Rhistory

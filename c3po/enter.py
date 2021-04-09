@@ -113,10 +113,18 @@ def enter(url_id):
         prev_journal = ''
         is_submit = ('submit' in request.form)
         has_error = False
+        up_idx = None
+        down_idx = None
         for i in range(0, last + 1):
             del_item_name = 'del_item'+str(steps[i])
             add_item_name = 'add_item'+str(steps[i])
+            up_item_name = 'up_item'+str(steps[i])
+            down_item_name = 'down_item'+str(steps[i])
             if not (del_item_name in request.form):
+                if up_item_name in request.form:
+                    up_idx = i
+                if down_item_name in request.form:
+                    down_idx = i
                 if add_item_name in request.form:
                     path_list_tmp.append(paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, '', '', '', is_submit).__dict__)
                     addMod = addMod + 1
@@ -132,6 +140,26 @@ def enter(url_id):
 
             else:
                 delMod = delMod - 1
+        if up_idx != None:
+            print(up_idx)
+            up_path_tmp = path_list_tmp.pop(up_idx)
+            up_path_tmp["step"] = up_path_tmp["step"] - 1
+            up_path_tmp["idx"] = up_path_tmp["idx"] - 1
+            prev_path_tmp = path_list_tmp.pop(up_idx - 1)
+            prev_path_tmp["step"] = prev_path_tmp["step"] + 1
+            prev_path_tmp["idx"] = prev_path_tmp["idx"] + 1
+            path_list_tmp.insert(up_idx - 1, up_path_tmp)
+            path_list_tmp.insert(up_idx, prev_path_tmp)
+        if down_idx != None:
+            print(down_idx)
+            next_path_tmp = path_list_tmp.pop(down_idx + 1)
+            next_path_tmp["step"] = next_path_tmp["step"] - 1
+            next_path_tmp["idx"] = next_path_tmp["idx"] - 1
+            down_path_tmp = path_list_tmp.pop(down_idx)
+            down_path_tmp["step"] = down_path_tmp["step"] + 1
+            down_path_tmp["idx"] = down_path_tmp["idx"] + 1
+            path_list_tmp.insert(down_idx, next_path_tmp)
+            path_list_tmp.insert(down_idx + 1, down_path_tmp)
         print(path_list_tmp)
 
         if 'add_item' in request.form:
