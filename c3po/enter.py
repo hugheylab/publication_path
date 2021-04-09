@@ -107,6 +107,7 @@ def enter(url_id):
         path_list_tmp = []
         isDel = False
         delMod = 0
+        addMod = 0
         prior_date = ''
         max_date = article_info['pub_date']
         prev_journal = ''
@@ -114,8 +115,12 @@ def enter(url_id):
         has_error = False
         for i in range(0, last + 1):
             del_item_name = 'del_item'+str(steps[i])
+            add_item_name = 'add_item'+str(steps[i])
             if not (del_item_name in request.form):
-                path_item_tmp = paper_path(i + delMod, url_id, (i + 1) + delMod, journals[i], submit_dates[i], '', is_submit)
+                if add_item_name in request.form:
+                    path_list_tmp.append(paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, '', '', '', is_submit).__dict__)
+                    addMod = addMod + 1
+                path_item_tmp = paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, journals[i], submit_dates[i], '', is_submit)
                 path_item_tmp.validate(prior_date, max_date, prev_journal)
                 prev_journal = path_item_tmp.journal
                 if not path_item_tmp.error == '':

@@ -144,10 +144,10 @@ $(document).ready(function ()
   <form id="package_form" action="" method="post">
     <table style="width:100%;">
       <tr>
-        <td style="width:5%">
+        <td style="width:10%">
           &nbsp;
         </td>
-        <td style="width:30%">
+        <td style="width:25%">
           Step
         </td>
         <td style="width:25%">
@@ -159,12 +159,17 @@ $(document).ready(function ()
       </tr>
         {% for path_item in session["path_list"] %}
           <tr>
-            <td>
+            <td style="vertical-align: bottom;">
               {% if not loop.last and confirm == False and allow_enter == True %}
-                <input type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+                <input style="width: 50%;" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
               {% endif %}
             </td>
             <td>
+              {% if confirm == False and allow_enter == True %}
+                <div class="panel-body">
+                  <input type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step">
+                </div><br/>
+              {% endif %}
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
@@ -204,9 +209,6 @@ $(document).ready(function ()
         {% endfor %}
     </table><br/>
     {% if confirm == False and allow_enter == True %}
-      <div class="panel-body">
-        <input type="submit" name="add_item" value="Add Step">
-      </div><br/>
       <div class="panel-body">
         <input type="submit" name="submit" value="Submit">
       </div>
