@@ -230,7 +230,7 @@ class paper_path:
     def validate(self, previous_date, max_date, previous_journal):
         self.error = ''
         if self.submit_date == '':
-            self.error = 'Submission date cannot be empty. '
+            # self.error = 'Submission date cannot be empty. '
         else:
             if not previous_date == '':
                 if '-' in self.submit_date:

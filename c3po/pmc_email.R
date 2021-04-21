@@ -85,8 +85,48 @@ dtNew[, pmc := paste0('PMC', pmc)]
 dtNew[, id_value := pmc]
 dtMerge = merge.data.table(dtNew, dt, by = 'id_value')
 dtMerge = dtMerge[, id_value := NULL]
-dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')
-dtMerge = dtMerge[, doi := id_value]
-dtMerge2 = dtMerge[!dtEmails, on=.(pmid, email)]
+dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
+dtMerge = dtMerge[!dtEmails, on=.(pmid, email)]
+dtMerge = dtMerge[, .(doi, email)]
+
+dbWriteTable(con, 'email_doi', dtMerge, append = TRUE)
+
+queryDrop1 = 'DROP TABLE IF EXISTS doi_child_tables;'
+queryDrop2 = 'DROP TABLE IF EXISTS email_doi_tables;'
+
+dbExecute(con, queryDrop1)
+dbExecute(con, queryDrop2)
+
+queryCreate1 = 'CREATE TABLE doi_child_tables ( \
+                doi TEXT PRIMARY KEY, \
+                email_ids INTEGER[], \
+                author_ids INTEGER[] \
+              );'
+queryCreate2 = 'CREATE TABLE email_doi_tables ( \
+                email TEXT PRIMARY KEY, \
+                dois TEXT[] \
+              );'
+
+dbExecute(con, queryCreate1)
+dbExecute(con, queryCreate2)
+
+queryInsert1 = 'insert into doi_child_tables(doi, email_ids, author_ids) \
+        	    (select article_info.doi, \
+        	 	  array_remove(array_agg(distinct(email_doi.id)), NULL) as email_ids, \
+        	    array_agg(distinct(author_doi.id)) as author_ids \
+        	    from article_info \
+        	    left join email_doi on article_info.doi = email_doi.doi \
+        	    left join author_doi on article_info.doi = author_doi.doi \
+        	    group by article_info.doi);'
+queryInsert2 = 'insert into email_doi_tables(email, dois) \
+        	    (select email, \
+        	 	  array_agg(doi) as dois \
+        	    from email_doi \
+        	    group by email);'
+
+dbExecute(con, queryInsert1)
+dbExecute(con, queryInsert2)
+
+dbDisconnect(con)
 
 
