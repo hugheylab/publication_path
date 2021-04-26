@@ -231,6 +231,7 @@ class paper_path:
         self.error = ''
         if self.submit_date == '':
             # self.error = 'Submission date cannot be empty. '
+            self.error = ''
         else:
             if not previous_date == '':
                 if '-' in self.submit_date:
