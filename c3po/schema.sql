@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS post;
 DROP TABLE IF EXISTS doi_child_tables;
 DROP TABLE IF EXISTS email_doi_tables;
 DROP TABLE IF EXISTS pmid_doi;
+DROP TABLE IF EXISTS pmdb_email;
 
 
 
@@ -29,7 +30,7 @@ CREATE TABLE IF NOT EXISTS email_doi (
   id SERIAL PRIMARY KEY,
   email TEXT NOT NULL,
   automated BOOLEAN DEFAULT TRUE NOT NULL,
-  doi TEXT NOT NULL
+  doi TEXT NOT NULL,
   source TEXT NOT NULL
 );
 
@@ -95,5 +96,12 @@ CREATE TABLE IF NOT EXISTS pmc_email (
   id SERIAL PRIMARY KEY,
   email TEXT NOT NULL,
   pmc TEXT NOT NULL,
+  doi TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pmdb_email (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL,
+  pmid TEXT NOT NULL,
   doi TEXT NOT NULL
 );
