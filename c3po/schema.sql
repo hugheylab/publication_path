@@ -71,7 +71,7 @@ CREATE TABLE If NOT EXISTS email_url (
 CREATE TABLE IF NOT EXISTS paper_path (
   id SERIAL PRIMARY KEY,
   step INTEGER NOT NULL,
-  submission_date DATE NOT NULL,
+  submission_date DATE,
   journal TEXT NOT NULL,
   url_param_id TEXT NOT NULL,
   FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)

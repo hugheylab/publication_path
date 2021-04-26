@@ -23,6 +23,12 @@ if (file.exists(apiKeyFilename)) {
   apiKey = dtAPI$api_key
 }
 
+# FEEDBACK
+# Turn certain bits into functions to reduce redundancy
+# Have complete accounting of PMC to DOI (maybe another table) then join later to ensure no duplicates. Useful to know all email adress combos.
+# Look into iterators package iter function to go by chunks by chunk size. Could also use split function with chunk size and iterate over that.
+# Use merge instead of merge.data.table.
+
 
 
 chunkSize = 50
