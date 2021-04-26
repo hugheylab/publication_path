@@ -1,79 +1,91 @@
 DROP TABLE IF EXISTS author_doi;
 DROP TABLE IF EXISTS article_info;
-DROP TABLE IF EXISTS journal;
+DROP TABLE IF EXISTS journal_name;
 DROP TABLE IF EXISTS timings;
 DROP TABLE IF EXISTS post;
+DROP TABLE IF EXISTS doi_child_tables;
+DROP TABLE IF EXISTS email_doi_tables;
+DROP TABLE IF EXISTS pmid_doi;
 
 
 
 CREATE TABLE IF NOT EXISTS email_address (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   email TEXT NOT NULL,
   password TEXT NOT NULL,
   active BOOLEAN NOT NULL
 );
 
 CREATE TABLE author_doi (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
+  author_pos INTEGER,
   author_name TEXT NOT NULL,
+  affiliation_pos INTEGER,
   author_affiliation TEXT NOT NULL,
   doi TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS email_doi (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   email TEXT NOT NULL,
-  automated BOOLEAN DEFAULT 1 NOT NULL,
+  automated BOOLEAN DEFAULT TRUE NOT NULL,
   doi TEXT NOT NULL
 );
 
-DELETE FROM email_doi WHERE automated = 1;
+DELETE FROM email_doi WHERE automated;
 
 CREATE TABLE article_info (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  pmid TEXT UNIQUE NOT NULL,
+  id SERIAL,
+  pmid TEXT NOT NULL,
   title TEXT NOT NULL,
   journal_name TEXT NOT NULL,
-  doi TEXT NOT NULL,
+  doi TEXT PRIMARY KEY,
   pub_date DATE
 );
 
+CREATE TABLE doi_child_tables (
+  doi TEXT PRIMARY KEY,
+  email_ids INTEGER[],
+  author_ids INTEGER[]
+);
+
+CREATE TABLE email_doi_tables (
+  email TEXT PRIMARY KEY,
+  dois TEXT[]
+);
+
+CREATE TABLE pmid_doi (
+  pmid INTEGER PRIMARY KEY,
+  doi TEXT
+);
+
 CREATE TABLE If NOT EXISTS email_url (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   email TEXT NOT NULL,
   url_param_id TEXT UNIQUE NOT NULL,
   doi TEXT NOT NULL,
   revision INTEGER NOT NULL,
-  completed_timestamp DATETIME
+  completed_timestamp TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS paper_path (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   step INTEGER NOT NULL,
-  submission_date DATE NOT NULL,
+  submission_date DATE,
   journal TEXT NOT NULL,
   url_param_id TEXT NOT NULL,
   FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)
 );
 
-CREATE TABLE journal (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE journal_name (
+  id SERIAL PRIMARY KEY,
   journal_name TEXT NOT NULL
 );
 
 CREATE TABLE timings (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   query TEXT NOT NULL,
-  start_time DATETIME,
-  stop_time DATETIME,
+  start_time TIMESTAMP,
+  stop_time TIMESTAMP,
   seconds INTEGER
-);
-
-CREATE TABLE post (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  author_id INTEGER NOT NULL,
-  created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  title TEXT NOT NULL,
-  body TEXT NOT NULL,
-  FOREIGN KEY (author_id) REFERENCES user (id)
 );

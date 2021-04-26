@@ -2,39 +2,137 @@ library('data.table')
 library('rentrez')
 library('stringr')
 library('xml2')
+library('RPostgres')
+library('DBI')
+library('foreach')
 
 # get PMCID from pmdb
 
-##########
-# simpler for some papers, but email address(es) cannot be linked to author names
+con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC limit 10000;'))
+dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
+dtEmails = setDT(DBI::dbGetQuery(con, 'SELECT email_doi.email, email_doi.doi, article_info.pmid FROM email_doi as email_doi LEFT JOIN article_info as article_info ON email_doi.doi = article_info.doi;'))
+dtEmails = dtEmails[, pmid := as.integer(pmid)]
 
-pmcid = 'PMC7815206'
-# pmcid = 'PMC7046182'
-# pmcid = 'PMC6857501'
+apiKeyFilename = 'c3po/api_key.csv'
 
-a1 = entrez_fetch(db = 'pmc', id = pmcid, rettype = 'xml')
-write(a1, file.choose(new = TRUE))
-a2 = read_xml(a1)
-# xml_text(xml_find_first(a2, './/author-notes'))
-a3 = xml_text(xml_find_all(xml_find_first(a2, './/author-notes'), './/email'))
-d = data.table(pmcid = pmcid,
-               email = a3)
-d = d[!is.na(email)]
+apiKey = NA
 
-##########
-# more complicated for some papers, but email address(es) can be linked to author names
+if (file.exists(apiKeyFilename)) {
+  dtAPI = fread(apiKeyFilename)
+  apiKey = dtAPI$api_key
+}
 
-# pmcid = 'PMC6914335'
-pmcid = 'PMC6535214'
+# FEEDBACK
+# Turn certain bits into functions to reduce redundancy
+# Have complete accounting of PMC to DOI (maybe another table) then join later to ensure no duplicates. Useful to know all email adress combos.
+# Look into iterators package iter function to go by chunks by chunk size. Could also use split function with chunk size and iterate over that.
+# Use merge instead of merge.data.table.
 
-a1 = entrez_fetch(db = 'pmc', id = pmcid, rettype = 'xml')
-a2 = read_xml(a1)
-a3 = xml_find_all(a2, './/contrib')
-d = data.table(pmcid = pmcid,
-               contrib_type = xml_attr(a3, 'contrib-type'),
-               surname = xml_text(xml_find_first(a3, './/surname')),
-               given_name = xml_text(xml_find_first(a3, './/given-names')),
-               email = xml_text(xml_find_first(a3, './/email')))
-d = d[contrib_type == 'author' & !is.na(email)]
-d[, contrib_type := NULL]
+
+
+chunkSize = 50
+
+numChunks = nrow(dt) %/% chunkSize
+
+dtNew = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
+  startNum = (i * chunkSize) + 1
+  endNum = startNum + chunkSize - 1
+  dtTmp = dt[startNum:endNum,]
+  if (is.na(apiKey)) {
+    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml')
+  } else {
+    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml', api_key = apiKey)
+  }
+  a2 = read_xml(a1)
+  # write_xml(a2, paste0(i, 'chunk_', chunkSize, 'chunkSize_entrez.xml'))
+  articles = xml_find_all(a2, './/article')
+  articleIds = xml_text(xml_find_all(articles, './/article-id[@pub-id-type=\'pmc\']'))
+  if (length(articleIds) < length(articles) ) print(i)
+  
+  texts1 = xml_text(xml_find_all(xml_find_all(articles, './/author-notes'), './/email'))
+  texts2 = xml_find_all(articles, './/author-notes//email', flatten = FALSE)
+  texts3 = lapply(texts2, xml_text)
+  
+  texts4 = xml_find_all(articles, './/contrib[@contrib-type=\'author\']//email', flatten = FALSE)
+  texts5 = lapply(texts4, xml_text)
+  
+  dt1 = data.table(pmc = articleIds, email = texts3)
+  dt1 = dt1[, .(email = unlist(email)), by = pmc]
+  dt2 = data.table(pmc = articleIds, email = texts5)
+  dt2 = dt2[, .(email = unlist(email)), by = pmc]
+  
+  rbind(dt1, dt2)
+  
+  
+  
+  # dtFound = data.table(pmcid = as.character(NA), email = as.character(NA))
+  # for(article in articles){
+  #   pmcid = ''
+  #   for (id in xml_find_all(article, './/article-id')) {
+  #     if (xml_attrs(id)[['pub-id-type']] == 'pmid') pmcid = paste0('PMC', xml_text(id))
+  #   }
+  #   a3 = xml_text(xml_find_all(xml_find_first(article, './/author-notes'), './/email'))
+  #   d = data.table(pmcid = pmcid,
+  #                  email = a3)
+  #   d = d[!is.na(email)]
+  #   a4 = xml_find_all(article, './/contrib')
+  #   d2 = data.table(pmcid = pmcid,
+  #                  contrib_type = xml_attr(a4, 'contrib-type'),
+  #                  email = xml_text(xml_find_first(a4, './/email')))
+  #   d2 = d2[contrib_type == 'author' & !is.na(email)]
+  #   d2[, contrib_type := NULL]
+  #   dtFound = rbind(dtFound, d, d2)
+  # }
+  # dtFound
+}
+
+dtNew[, pmc := paste0('PMC', pmc)]
+dtNew[, id_value := pmc]
+dtMerge = merge.data.table(dtNew, dt, by = 'id_value')
+dtMerge = dtMerge[, id_value := NULL]
+dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
+dtMerge = dtMerge[!dtEmails, on=.(pmid, email)]
+dtMerge = dtMerge[, .(doi, email)]
+
+dbWriteTable(con, 'email_doi', dtMerge, append = TRUE)
+
+queryDrop1 = 'DROP TABLE IF EXISTS doi_child_tables;'
+queryDrop2 = 'DROP TABLE IF EXISTS email_doi_tables;'
+
+dbExecute(con, queryDrop1)
+dbExecute(con, queryDrop2)
+
+queryCreate1 = 'CREATE TABLE doi_child_tables ( \
+                doi TEXT PRIMARY KEY, \
+                email_ids INTEGER[], \
+                author_ids INTEGER[] \
+              );'
+queryCreate2 = 'CREATE TABLE email_doi_tables ( \
+                email TEXT PRIMARY KEY, \
+                dois TEXT[] \
+              );'
+
+dbExecute(con, queryCreate1)
+dbExecute(con, queryCreate2)
+
+queryInsert1 = 'insert into doi_child_tables(doi, email_ids, author_ids) \
+        	    (select article_info.doi, \
+        	 	  array_remove(array_agg(distinct(email_doi.id)), NULL) as email_ids, \
+        	    array_agg(distinct(author_doi.id)) as author_ids \
+        	    from article_info \
+        	    left join email_doi on article_info.doi = email_doi.doi \
+        	    left join author_doi on article_info.doi = author_doi.doi \
+        	    group by article_info.doi);'
+queryInsert2 = 'insert into email_doi_tables(email, dois) \
+        	    (select email, \
+        	 	  array_agg(doi) as dois \
+        	    from email_doi \
+        	    group by email);'
+
+dbExecute(con, queryInsert1)
+dbExecute(con, queryInsert2)
+
+dbDisconnect(con)
+
 

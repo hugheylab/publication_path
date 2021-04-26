@@ -1,27 +1,117 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}Please confirm this is the correct paper!{% endblock %}</h1>
+  <h1>{% block title %}Confirm the paper(s) listed are correct, and select all email addresses to send publication path entry links to!{% endblock %}</h1>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    .collapsible {
+      background-color: #f1f1f1;
+      color: black;
+      cursor: pointer;
+      padding: 18px;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 15px;
+    }
+    
+    .active, .collapsible:hover {
+      background-color: #fff;
+    }
+    
+    .content2 {
+      display: none;
+      overflow: hidden;
+    }
+    </style>
 {% endblock %}
 
 {% block content %}
   <form method="post">
-    {% for article in articles %}
-      <h3>Article Information</h3>
-      <b>Title:&nbsp;</b>{{ article.title }}<br/>
-      <b>DOI:&nbsp;</b>{{ article.doi }}<br/>
-      <b>PMID:&nbsp;</b>{{ article.pmid }}<br/>
-      <b>Journal:&nbsp;</b>{{ article.journal_name }}<br/>
-      <b>Publication Date:&nbsp;</b>{{ article.pub_date }}<br/>
-      <b>Authors:</b><br/>
-      {% for author in authors %}
-          {{author['author_name']}}&nbsp;-&nbsp;{{author['author_affiliation']}}<br/>
-      {% endfor %}<br/><br/>
-      <h3>Please select the emails to send path entry URLs to:</h3>
-      {% for email in emails %}
-          <input type="checkbox" name="{{email['email']}}" id="{{email['email']}}" />{{email['email']}}<br/>
+    <table style="width:100%;border-spacing: 0px;">
+      <tr>
+        <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
+          <!--<b>Article Information</b>-->
+          <b>Instructions: </b>
+          <ol>
+            <li>Select each email address per article you wish to send a link to. Selecing an email to the right will select all instances of that email found.</li>
+            <li>You can click "Show/Hide Information" to view additional information (DOI, affiliations, etc.).</li>
+            <li>If you need to go back to search again, click "Back" to return to the search screen and refine your search.</li>
+            <li>Once you have selected all email addresses per article to send links to, click "Confirm" to generate and send out the links.</li>
+          </ol>
+        </td>
+        <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
+            {% if email_list %}
+            <b>Toggle to select/deselect all matching emails:</b><br/>
+            {% for email in email_list %}
+              <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
+            {% endfor %}
+          {% endif %}
+        </td>
+      </tr>
+      {% for article_info in article_infos %}
+        <tr>
+          <td style="width: 75%; border-bottom: 1px solid black;">
+            <h3>{{ article_info.article.title }}</h3>
+            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/><br/>{% endif %}
+            {{ article_info.article.journal_name }}<br/>
+            {{ article_info.article.pub_date }}<br/>
+            {% for author in article_info.authors %}
+                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
+            {% endfor %}<br/>
+            <button type="button" class="collapsible">Show/Hide more information</button>
+            <div class="content2">
+              Affiliations:<br/>
+              {% for affiliation in article_info.affiliation_list %}
+                  {{ loop.index }}.&nbsp;{{affiliation}}<br/>
+              {% endfor %}<br/>
+              DOI:&nbsp;{{ article_info.article.doi }}<br/>
+              PMID:&nbsp;{{ article_info.article.pmid }}<br/>
+            </div>
+          </td>
+          <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
+            {% if article_info.has_emails == True %}
+              <br/>
+              {% for email in article_info.emails %}
+                  <input class="checkable" type="checkbox" name="{{article_info.article.doi + '---' + email.email}}" id="{{article_info.article.doi + '---' + email.email}}" />&nbsp;{{email.email}}<br/>
+              {% endfor %}
+            {% else %}
+              <h3>No emails addresses found.</h3>
+            {% endif %}
+          </td>
+        </tr>
       {% endfor %}
-      <br/><input type="submit" value="Confirm">
-    {% endfor %}
+    </table>
+    <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;{% if all_has_emails == True %}<input type="submit" value="Confirm">{% endif %}
   </form>
+  <script>
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+    
+    for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.display === "block") {
+          content.style.display = "none";
+        } else {
+          content.style.display = "block";
+        }
+      });
+    }
+    </script>
+  <script>
+    function selectAll(source) {
+      var email = source.getAttribute("name");
+      var elmnts = document.getElementsByTagName("input");
+      for (var i = 0; i < elmnts.length;i++) {
+        if (elmnts[i].getAttribute("type") == "checkbox" && elmnts[i].getAttribute("name").includes("---")) {
+          tmp_arr = elmnts[i].getAttribute("name").split("---");
+          if (email == tmp_arr[1]) {
+            elmnts[i].checked = source.checked;
+          }
+        }
+      }
+    }
+    </script>
 {% endblock %}

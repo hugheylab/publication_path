@@ -32,21 +32,79 @@ $(document).ready(function ()
 <script>
   $(document).ready(function ()
 {
-  $('.js-example-basic-single').select2();
+  function sortCustom(data) {
+    // If there are no search terms, return all of the data
+    function array_move(arr, old_index, new_index) {
+      if (new_index >= arr.length) {
+          var k = new_index - arr.length + 1;
+          while (k--) {
+              arr.push(undefined);
+          }
+      }
+      arr.splice(new_index, 0, arr.splice(old_index, 1)[0]);
+    };
+
+    for (var i = 0; i <= data.length; i++) {
+        var result = data[i];
+
+        if (typeof result !== "undefined" && result.text === params_text) {
+            array_move(data, i, 0);
+        }
+    }
+
+    return data;
+  }
+  function matchCustom(params, data) {
+      // If there are no search terms, return all of the data
+    if ($.trim(params.term) === '') {
+      return null;
+    }
+
+    // Skip if there is no 'children' property
+    if (typeof data.text === 'undefined') {
+      return null;
+    }
+
+    const regex = /&/g
+    data_text = data.text.replace(regex, 'and')
+    params_text = params.term.replace(regex, 'and')
+    if (data_text.toUpperCase().indexOf(params_text.toUpperCase()) == 0) {
+      return data
+    }
+
+    // Return `null` if the term should not be displayed
+    return null;
+  }
+  $('.js-example-basic-single').select2({
+    matcher: matchCustom
+    //sorter: sortCustom
+  });
 });
 </script>
-  <p>Hello!</p>
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
+    {% else %}
+    <b>Instructions: </b>
+    <ol>
+      {% if confirm == False %}
+        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission.</li>
+        <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
+        <li>Add/delete steps as necessary.</li>
+        <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
+        <li>If no errors are found, you will be taken to a final confirmation screen.</li>
+      {% else %}
+        <li>If you realize you made a mistake, click "Cancel" to return to the entry screen.</li>
+        <li>Once you have confirmed all streps are entered correctly, click "Confirm" to finish submitting the information.</li>
+      {% endif %}
+    </ol>
   {% endif %}
-  <h3>Article Info</h3>
-  <b>Title:&nbsp;</b>{{ article_info.title }}<br/>
-  <b>DOI:&nbsp;</b>{{ article_info.doi }}<br/>
-  <b>Publication Date:&nbsp;</b>{{ article_info.pub_date }}<br/>
-  <b>Authors:</b><br/>
+  <h3>{{ article_info.title }}</h3>
+  {{ article_info.journal_name }}<br/>
+  {{ article_info.pub_date }}<br/>
   {% for author in author_doi %}
-      {{author['author_name']}}&nbsp;-&nbsp;{{author['author_affiliation']}}<br/>
-  {% endfor %}
+      {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
+  {% endfor %}<br/>
+  {{ article_info.doi }}<br/>
   {% if allow_enter == True and has_completed == True %}
     <h3 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h3>
     <table>
@@ -55,7 +113,7 @@ $(document).ready(function ()
           Step
         </td>
         <td style="width:25%">
-          Date
+          First Submission Date
         </td>
         <td style="width:40%">
           Journal
@@ -84,24 +142,46 @@ $(document).ready(function ()
   {% endif %}
   <h3>Step Entry</h3>
   <form id="package_form" action="" method="post">
-    <table>
+    <table style="width:70%;">
       <tr>
-        <td style="width:25%">
-          Step
-        </td>
-        <td style="width:25%">
-          Date
-        </td>
-        <td style="width:40%">
-          Journal
+        <td style="width:5%">
+          &nbsp;
         </td>
         <td style="width:10%">
           &nbsp;
         </td>
+        <td style="width:15%">
+          Step
+        </td>
+        <td style="width:25%">
+          First Submission Date
+        </td>
+        <td style="width:40%">
+          Journal
+        </td>
       </tr>
         {% for path_item in session["path_list"] %}
           <tr>
+            <td style="vertical-align: bottom;">
+              {% if confirm == False and allow_enter == True %}
+                <input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
+              {% endif %}
+            </td>
+            <td style="vertical-align: bottom; ">
+              {% if not loop.last and confirm == False and allow_enter == True %}
+                <input  type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+              {% endif %}
+            </td>
             <td>
+              {% if not loop.last and confirm == False and allow_enter == True %}
+                {% if not loop.first %}
+                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+                {% endif %}
+                {% if not loop.revindex0 < 2 %}
+                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
+                {% endif %}
+
+              {% endif %}
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
@@ -122,7 +202,7 @@ $(document).ready(function ()
             </td>
             <td>
               {% if not loop.last and confirm == False and allow_enter == True %}
-                <select class="js-example-basic-single" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
+                <select class="js-example-basic-single" style="width: 100%;" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
                   <option value="">--None Selected--</option>
                   {% for journal_opt in journal_opts %}
                     {% if journal_opt.journal_name == path_item.journal %}
@@ -137,18 +217,10 @@ $(document).ready(function ()
                 {{ path_item.journal }}
               {% endif %}
             </td>
-            <td>
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                <input type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
-              {% endif %}
-            </td>
           </tr>
         {% endfor %}
-    </table>
+    </table><br/>
     {% if confirm == False and allow_enter == True %}
-      <div class="panel-body">
-        <input type="submit" name="add_item" value="Add Step">
-      </div>
       <div class="panel-body">
         <input type="submit" name="submit" value="Submit">
       </div>
@@ -156,7 +228,7 @@ $(document).ready(function ()
       {% if allow_enter == True %}
         <div class="panel-body">
           <input type="submit" name="cancel" value="Cancel">
-        </div>
+        </div><br/>
         <div class="panel-body">
           <input type="submit" name="confirm" value="Confirm">
         </div>

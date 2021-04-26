@@ -5,3 +5,10 @@ instance
 venv
 .vscode
 c3po/authorization_files
+*/database.ini
+.Rproj.user
+publication_path.Rproj
+*entrez.xml
+.RData
+.Rhistory
+c3po/api_key.csv
