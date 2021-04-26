@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS email_doi (
   email TEXT NOT NULL,
   automated BOOLEAN DEFAULT TRUE NOT NULL,
   doi TEXT NOT NULL
+  source TEXT NOT NULL
 );
 
 DELETE FROM email_doi WHERE automated;
@@ -88,4 +89,11 @@ CREATE TABLE timings (
   start_time TIMESTAMP,
   stop_time TIMESTAMP,
   seconds INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS pmc_email (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL,
+  pmc TEXT NOT NULL,
+  doi TEXT NOT NULL
 );
