@@ -87,9 +87,9 @@ $(document).ready(function ()
     <b>Instructions: </b>
     <ol>
       {% if confirm == False %}
-        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission.</li>
+        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission. Submission dates are optional.</li>
         <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
-        <li>Add/delete steps as necessary.</li>
+        <li>Add/delete steps as necessary. You can also use the arrows to move steps up or down the list.</li>
         <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
         <li>If no errors are found, you will be taken to a final confirmation screen.</li>
       {% else %}
@@ -164,7 +164,8 @@ $(document).ready(function ()
           <tr>
             <td style="vertical-align: bottom;">
               {% if confirm == False and allow_enter == True %}
-                <input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
+                <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
+                <input type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
               {% endif %}
             </td>
             <td style="vertical-align: bottom; ">
@@ -175,10 +176,10 @@ $(document).ready(function ()
             <td>
               {% if not loop.last and confirm == False and allow_enter == True %}
                 {% if not loop.first %}
-                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+                  <input type="submit" class="button-link" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
                 {% endif %}
                 {% if not loop.revindex0 < 2 %}
-                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
+                  <input type="submit" class="button-link" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
                 {% endif %}
 
               {% endif %}
@@ -197,7 +198,11 @@ $(document).ready(function ()
                 <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
               {% else %}
                 <input hidden type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
-                {{ path_item.submit_date }}
+                {% if path_item.submit_date != NULL and path_item.submit_date != "" %}
+                  {{ path_item.submit_date }}
+                {% else %}
+                  Not specified.
+                {% endif %}
               {% endif %}
             </td>
             <td>
@@ -227,7 +232,7 @@ $(document).ready(function ()
     {% else %}
       {% if allow_enter == True %}
         <div class="panel-body">
-          <input type="submit" name="cancel" value="Cancel">
+          <input type="submit" name="cancel" value="Go Back">
         </div><br/>
         <div class="panel-body">
           <input type="submit" name="confirm" value="Confirm">

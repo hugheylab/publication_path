@@ -260,7 +260,7 @@ class paper_path:
                 
 
                 if s_date > max_date:
-                    self.error = self.error + 'Submission Date cannot be after the puiblication date. '
+                    self.error = self.error + 'Submission Date cannot be after the publication date. '
         
         if self.journal == '':
             self.error = self.error + 'Journal cannot be empty. '

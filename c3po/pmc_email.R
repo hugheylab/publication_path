@@ -16,10 +16,8 @@ addTimings = function(timingsDT, stepName) {
 timingsDT = data.table(step = as.character(), elapsed = as.numeric())
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
 timingsDT = addTimings(timingsDT, 'Start')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC limit 10000;'))
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid LIMIT 100000;'))
 timingsDT = addTimings(timingsDT, 'Query pmc id')
-dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
-timingsDT = addTimings(timingsDT, 'Query doi')
 # Uncomment below lines if you want to filter further down the line already existing values.
 # dtEmails = setDT(DBI::dbGetQuery(con, 'SELECT email_doi.email, email_doi.doi, article_info.pmid FROM email_doi as email_doi LEFT JOIN article_info as article_info ON email_doi.doi = article_info.doi;'))
 # addTimings(timingsDT, 'email query')
@@ -42,7 +40,7 @@ if (file.exists(apiKeyFilename)) {
 
 
 
-chunkSize = 50
+chunkSize = 70
 
 numChunks = nrow(dt) %/% chunkSize
 
@@ -80,6 +78,7 @@ dtNew = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
   dt2 = data.table(pmc = articleIds, email = texts5)
   dt2 = dt2[, .(email = unlist(email)), by = pmc]
   
+  timingsDT = addTimings(timingsDT, paste0('End loop chunk ', i))
   rbind(dt1, dt2)
   
   
@@ -103,10 +102,11 @@ dtNew = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
   #   dtFound = rbind(dtFound, d, d2)
   # }
   # dtFound
-  timingsDT = addTimings(timingsDT, paste0('End loop chunk ', i))
 }
 
 timingsDT = addTimings(timingsDT, 'End loop')
+dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
+timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
 dtNew[, pmc := paste0('PMC', pmc)]
