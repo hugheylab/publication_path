@@ -5,32 +5,88 @@ library('xml2')
 library('RPostgres')
 library('DBI')
 library('foreach')
+library('RCurl')
+library('glue')
+library('stringr')
+options(timeout = 900)
+
 
 # get PMCID from pmdb
+
+
+# Replace the two below with the pmparser version
+getRemoteFilenames = function(url, pattern) {
+  raw = RCurl::getURL(url)
+  x = strsplit(raw, '\\n')[[1L]]
+  m = regexpr(glue('{pattern}$'), x)
+  filenames = regmatches(x, m)
+  d = data.table(
+    tar_filename = filenames)
+  d = d[, download_url := paste0(url, tar_filename)]
+  return(d)}
+
+download = function(url, destfile, n = 3L) {
+  i = 1L
+  x = 1L
+  while (i <= n && !identical(x, 0L)) {
+    x = tryCatch({utils::download.file(url, destfile)}, error = function(e) e)
+    if (!identical(x, 0L)) Sys.sleep(stats::runif(1L, 1, 2))
+    i = i + 1L}
+  
+  if (inherits(x, 'error')) stop(x)
+  if (x != 0L) stop(glue('Download of {url} failed {n} times. Ruh-roh.'))
+  x}
+
+getAndUnzipRemoteFiles = function(localDir, url, pattern) {
+  if (!dir.exists(localDir)) {
+    dir.create(localDir)
+  }
+  fNames = getRemoteFilenames(url, pattern)
+  fNames[, tar_path := file.path(localDir, tar_filename)]
+  setwd(localDir)
+  r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
+    download(f$download_url, f$tar_filename)
+    untar(f$tar_filename)
+  }
+  setwd('../')
+  fileDT = data.table(file_paths = list.files(localDir, recursive = TRUE))
+  fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.)')]
+  return(fileDT)
+}
 
 addTimings = function(timingsDT, stepName) {
   elapsed = proc.time()[['elapsed']]
   timingsDT = rbind(timingsDT, data.table(step = stepName, elapsed = elapsed))
 }
 
+dtFromXml = function(articleIds, articles, xpath) {
+  nodes = xml_find_all(articles, xpath, flatten = FALSE)
+  texts = lapply(nodes, xml_text)
+  
+  dt1 = data.table(pmc = articleIds, email = texts)
+  dt1 = dt1[, .(email = unlist(email)), by = pmc]
+}
+
+url = 'ftp.ncbi.nlm.nih.gov/pub/pmc/oa_bulk/'
+pattern = '(?:non_|)comm_use.*\\.xml\\.tar\\.gz'
+localDir = 'pmc_files'
+
+fileDT = getAndUnzipRemoteFiles(localDir, url, pattern)
+
+
+
+
+# Once you have all files and folders downloaded, make a data.table of file paths using file.list 
+
 timingsDT = data.table(step = as.character(), elapsed = as.numeric())
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
 timingsDT = addTimings(timingsDT, 'Start')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid LIMIT 100000;'))
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
 timingsDT = addTimings(timingsDT, 'Query pmc id')
 # Uncomment below lines if you want to filter further down the line already existing values.
 # dtEmails = setDT(DBI::dbGetQuery(con, 'SELECT email_doi.email, email_doi.doi, article_info.pmid FROM email_doi as email_doi LEFT JOIN article_info as article_info ON email_doi.doi = article_info.doi;'))
 # addTimings(timingsDT, 'email query')
 # dtEmails = dtEmails[, pmid := as.integer(pmid)]
-
-apiKeyFilename = 'c3po/api_key.csv'
-
-apiKey = NA
-
-if (file.exists(apiKeyFilename)) {
-  dtAPI = fread(apiKeyFilename)
-  apiKey = dtAPI$api_key
-}
 
 # FEEDBACK
 # Turn certain bits into functions to reduce redundancy
@@ -40,68 +96,27 @@ if (file.exists(apiKeyFilename)) {
 
 
 
-chunkSize = 70
+chunkSize = 50
 
 numChunks = nrow(dt) %/% chunkSize
 
 timingsDT = addTimings(timingsDT, 'Start loop')
 
-dtNew = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
-  timingsDT = addTimings(timingsDT, paste0('Start loop chunk ', i))
-  startNum = (i * chunkSize) + 1
-  endNum = startNum + chunkSize - 1
-  dtTmp = dt[startNum:endNum,]
-  timingsDT = addTimings(timingsDT, paste0('Start entrez fetch chunk ', i))
-  if (is.na(apiKey)) {
-    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml')
-  } else {
-    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml', api_key = apiKey)
-  }
-  timingsDT = addTimings(timingsDT, paste0('End entrez fetch chunk ', i))
-  timingsDT = addTimings(timingsDT, paste0('Start entrez xml parse ', i))
+dtNew = foreach(dtTmp = iterators::iter(dt, by = 'row'), .combine = rbind) %do% {
+  fileDTFil = fileDT[pmc == dtTmp$id_value,]
+  timingsDT = addTimings(timingsDT, paste0('Start xml parse ', i))
   a2 = read_xml(a1)
   # write_xml(a2, paste0(i, 'chunk_', chunkSize, 'chunkSize_entrez.xml'))
   articles = xml_find_all(a2, './/article')
   articleIds = xml_text(xml_find_all(articles, './/article-id[@pub-id-type=\'pmc\']'))
   if (length(articleIds) < length(articles) ) print(i)
   
-  texts1 = xml_text(xml_find_all(xml_find_all(articles, './/author-notes'), './/email'))
-  texts2 = xml_find_all(articles, './/author-notes//email', flatten = FALSE)
-  texts3 = lapply(texts2, xml_text)
-  
-  texts4 = xml_find_all(articles, './/contrib[@contrib-type=\'author\']//email', flatten = FALSE)
-  texts5 = lapply(texts4, xml_text)
-  timingsDT = addTimings(timingsDT, paste0('End entrez xml parse ', i))
-  
-  dt1 = data.table(pmc = articleIds, email = texts3)
-  dt1 = dt1[, .(email = unlist(email)), by = pmc]
-  dt2 = data.table(pmc = articleIds, email = texts5)
-  dt2 = dt2[, .(email = unlist(email)), by = pmc]
+  dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
+  dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
+  timingsDT = addTimings(timingsDT, paste0('End xml parse ', i))
   
   timingsDT = addTimings(timingsDT, paste0('End loop chunk ', i))
   rbind(dt1, dt2)
-  
-  
-  
-  # dtFound = data.table(pmcid = as.character(NA), email = as.character(NA))
-  # for(article in articles){
-  #   pmcid = ''
-  #   for (id in xml_find_all(article, './/article-id')) {
-  #     if (xml_attrs(id)[['pub-id-type']] == 'pmid') pmcid = paste0('PMC', xml_text(id))
-  #   }
-  #   a3 = xml_text(xml_find_all(xml_find_first(article, './/author-notes'), './/email'))
-  #   d = data.table(pmcid = pmcid,
-  #                  email = a3)
-  #   d = d[!is.na(email)]
-  #   a4 = xml_find_all(article, './/contrib')
-  #   d2 = data.table(pmcid = pmcid,
-  #                  contrib_type = xml_attr(a4, 'contrib-type'),
-  #                  email = xml_text(xml_find_first(a4, './/email')))
-  #   d2 = d2[contrib_type == 'author' & !is.na(email)]
-  #   d2[, contrib_type := NULL]
-  #   dtFound = rbind(dtFound, d, d2)
-  # }
-  # dtFound
 }
 
 timingsDT = addTimings(timingsDT, 'End loop')
