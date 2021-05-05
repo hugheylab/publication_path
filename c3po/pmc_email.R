@@ -126,10 +126,6 @@ con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
 timingsDT = addTimings(timingsDT, 'Start')
 dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
 timingsDT = addTimings(timingsDT, 'Query pmc id')
-# Uncomment below lines if you want to filter further down the line already existing values.
-# dtEmails = setDT(DBI::dbGetQuery(con, 'SELECT email_doi.email, email_doi.doi, article_info.pmid FROM email_doi as email_doi LEFT JOIN article_info as article_info ON email_doi.doi = article_info.doi;'))
-# addTimings(timingsDT, 'email query')
-# dtEmails = dtEmails[, pmid := as.integer(pmid)]
 
 
 
@@ -161,7 +157,6 @@ dtNewFromEntrez = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
   endNum = startNum + chunkSize - 1
   dtTmp = dtNoFile[startNum:endNum,]
   a2 = read_xml(getXmlFromEntrez(dtTmp$id_value, apiKey))
-  # write_xml(a2, paste0(i, 'chunk_', chunkSize, 'chunkSize_entrez.xml'))
   articles = xml_find_all(a2, './/article')
   articleIds = xml_text(xml_find_all(articles, './/article-id[@pub-id-type=\'pmc\']'))
   if (length(articleIds) < length(articles) ) print(i)
@@ -186,9 +181,7 @@ dtNew[, id_value := pmc]
 dtMerge = merge.data.table(dtNew, dt, by = 'id_value')
 dtMerge = dtMerge[, id_value := NULL]
 dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
-# Uncomment below line to add an anti-join to exclude already existing email pairs in DB.
-# dtMerge = dtMerge[!dtEmails, on=.(pmid, email)]
-# dtMerge = dtMerge[, source := 'pmc_email']
+
 dtMerge = dtMerge[, .(doi, email, pmc)]
 timingsDT = addTimings(timingsDT, 'End modify data.table')
 
@@ -196,45 +189,6 @@ timingsDT = addTimings(timingsDT, 'Start insert data.table')
 dbExecute(con, 'DELETE FROM pmc_email;')
 dbWriteTable(con, 'pmc_email', dtMerge, append = TRUE)
 timingsDT = addTimings(timingsDT, 'End insert data.table')
-
-# Uncomment below block to add to email_doi table and reset the doi_child_tables and email_doi_tables indexed tables.
-# dbWriteTable(con, 'email_doi', dtMerge, append = TRUE)
-# 
-# queryDrop1 = 'DROP TABLE IF EXISTS doi_child_tables;'
-# queryDrop2 = 'DROP TABLE IF EXISTS email_doi_tables;'
-# 
-# dbExecute(con, queryDrop1)
-# dbExecute(con, queryDrop2)
-# 
-# queryCreate1 = 'CREATE TABLE doi_child_tables ( \
-#                 doi TEXT PRIMARY KEY, \
-#                 email_ids INTEGER[], \
-#                 author_ids INTEGER[] \
-#               );'
-# queryCreate2 = 'CREATE TABLE email_doi_tables ( \
-#                 email TEXT PRIMARY KEY, \
-#                 dois TEXT[] \
-#               );'
-# 
-# dbExecute(con, queryCreate1)
-# dbExecute(con, queryCreate2)
-# 
-# queryInsert1 = 'insert into doi_child_tables(doi, email_ids, author_ids) \
-#         	    (select article_info.doi, \
-#         	 	  array_remove(array_agg(distinct(email_doi.id)), NULL) as email_ids, \
-#         	    array_agg(distinct(author_doi.id)) as author_ids \
-#         	    from article_info \
-#         	    left join email_doi on article_info.doi = email_doi.doi \
-#         	    left join author_doi on article_info.doi = author_doi.doi \
-#         	    group by article_info.doi);'
-# queryInsert2 = 'insert into email_doi_tables(email, dois) \
-#         	    (select email, \
-#         	 	  array_agg(doi) as dois \
-#         	    from email_doi \
-#         	    group by email);'
-# 
-# dbExecute(con, queryInsert1)
-# dbExecute(con, queryInsert2)
 
 timingsDT = addTimings(timingsDT, 'End')
 timingsDT[, elapsed := elapsed - timingsDT$elapsed[1]]
