@@ -12,3 +12,4 @@ publication_path.Rproj
 .RData
 .Rhistory
 c3po/api_key.csv
+pmc_files/*

@@ -8,7 +8,7 @@ library('foreach')
 library('RCurl')
 library('glue')
 library('stringr')
-options(timeout = 900)
+options(timeout = 3600)
 
 
 # get PMCID from pmdb
@@ -37,7 +37,7 @@ download = function(url, destfile, n = 3L) {
   if (x != 0L) stop(glue('Download of {url} failed {n} times. Ruh-roh.'))
   x}
 
-getAndUnzipRemoteFiles = function(localDir, url, pattern) {
+getRemoteFiles = function(localDir, url, pattern) {
   if (!dir.exists(localDir)) {
     dir.create(localDir)
   }
@@ -46,11 +46,28 @@ getAndUnzipRemoteFiles = function(localDir, url, pattern) {
   setwd(localDir)
   r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
     download(f$download_url, f$tar_filename)
+    # untar(f$tar_filename)
+  }
+  setwd('../')
+  # fileDT = data.table(file_paths = list.files(localDir, recursive = TRUE))
+  # fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.)')]
+  return(fNames)
+}
+
+untarFiles = function(fNames, localDir) {
+  setwd(localDir)
+  r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
     untar(f$tar_filename)
   }
   setwd('../')
-  fileDT = data.table(file_paths = list.files(localDir, recursive = TRUE))
+  return(getFilesDT(localDir))
+}
+
+getFilesDT = function(localDir) {
+  fList = list.files(localDir, recursive = TRUE)
+  fileDT = data.table(file_paths = fList)
   fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.)')]
+  fileDT = fileDT[!(grepl('comm_use', pmc)),]
   return(fileDT)
 }
 
@@ -59,22 +76,48 @@ addTimings = function(timingsDT, stepName) {
   timingsDT = rbind(timingsDT, data.table(step = stepName, elapsed = elapsed))
 }
 
-dtFromXml = function(articleIds, articles, xpath) {
-  nodes = xml_find_all(articles, xpath, flatten = FALSE)
-  texts = lapply(nodes, xml_text)
-  
-  dt1 = data.table(pmc = articleIds, email = texts)
-  dt1 = dt1[, .(email = unlist(email)), by = pmc]
+dtFromXml = function(articleIds, articles, xpath, entrez = TRUE) {
+  # if (isTRUE(entrez)) {
+    nodes = xml_find_all(articles, xpath, flatten = FALSE)
+    texts = lapply(nodes, xml_text)
+    
+    dt1 = data.table(pmc = articleIds, email = texts)
+    dt1 = dt1[, .(email = unlist(email)), by = pmc]
+  # } else {
+    
+  # }
+}
+
+getXmlFromEntrez = function(pmcIds, apiKey) {
+  if (is.na(apiKey)) {
+    a1 = entrez_fetch(db = 'pmc', id = pmcIds, rettype = 'xml')
+  } else {
+    a1 = entrez_fetch(db = 'pmc', id = pmcIds, rettype = 'xml', api_key = apiKey)
+  }
+  return(a1)
 }
 
 url = 'ftp.ncbi.nlm.nih.gov/pub/pmc/oa_bulk/'
 pattern = '(?:non_|)comm_use.*\\.xml\\.tar\\.gz'
 localDir = 'pmc_files'
 
-fileDT = getAndUnzipRemoteFiles(localDir, url, pattern)
+filesExist = TRUE
 
+if (isFALSE(filesExist)) {
+  fNames = getRemoteFiles(localDir, url, pattern)
+  fileDT = untarFiles(fNames, localDir)
+} else {
+  fileDT = getFilesDT(localDir)
+}
 
+apiKeyFilename = 'c3po/api_key.csv'
 
+apiKey = NA
+
+if (file.exists(apiKeyFilename)) {
+  dtAPI = fread(apiKeyFilename)
+  apiKey = dtAPI$api_key
+}
 
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
@@ -88,24 +131,36 @@ timingsDT = addTimings(timingsDT, 'Query pmc id')
 # addTimings(timingsDT, 'email query')
 # dtEmails = dtEmails[, pmid := as.integer(pmid)]
 
-# FEEDBACK
-# Turn certain bits into functions to reduce redundancy
-# Have complete accounting of PMC to DOI (maybe another table) then join later to ensure no duplicates. Useful to know all email adress combos.
-# Look into iterators package iter function to go by chunks by chunk size. Could also use split function with chunk size and iterate over that.
-# Use merge instead of merge.data.table.
 
 
+
+
+dt[, hasFile := (id_value %in% fileDT$pmc)]
 
 chunkSize = 50
 
-numChunks = nrow(dt) %/% chunkSize
+numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
 
-timingsDT = addTimings(timingsDT, 'Start loop')
+dtNoFile = dt[hasFile == FALSE,]
 
-dtNew = foreach(dtTmp = iterators::iter(dt, by = 'row'), .combine = rbind) %do% {
+timingsDT = addTimings(timingsDT, 'Start loop over files')
+dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'), .combine = rbind) %do% {
   fileDTFil = fileDT[pmc == dtTmp$id_value,]
-  timingsDT = addTimings(timingsDT, paste0('Start xml parse ', i))
-  a2 = read_xml(a1)
+  articles = read_xml(file.path(localDir, fileDTFil$file_paths))
+  articleIds = dtTmp$id_value
+  
+  dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
+  dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
+  rbind(dt1, dt2)
+}
+timingsDT = addTimings(timingsDT, 'End loop over files')
+
+timingsDT = addTimings(timingsDT, 'Start loop over Entrez')
+dtNewFromEntrez = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
+  startNum = (i * chunkSize) + 1
+  endNum = startNum + chunkSize - 1
+  dtTmp = dtNoFile[startNum:endNum,]
+  a2 = read_xml(getXmlFromEntrez(dtTmp$id_value, apiKey))
   # write_xml(a2, paste0(i, 'chunk_', chunkSize, 'chunkSize_entrez.xml'))
   articles = xml_find_all(a2, './/article')
   articleIds = xml_text(xml_find_all(articles, './/article-id[@pub-id-type=\'pmc\']'))
@@ -113,13 +168,14 @@ dtNew = foreach(dtTmp = iterators::iter(dt, by = 'row'), .combine = rbind) %do% 
   
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
-  timingsDT = addTimings(timingsDT, paste0('End xml parse ', i))
   
-  timingsDT = addTimings(timingsDT, paste0('End loop chunk ', i))
   rbind(dt1, dt2)
-}
 
-timingsDT = addTimings(timingsDT, 'End loop')
+}
+timingsDT = addTimings(timingsDT, 'End loop over Entrez')
+
+dtNew = rbind(dtNewFromFiles, dtNewFromEntrez)
+
 dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
 timingsDT = addTimings(timingsDT, 'Query doi')
 
