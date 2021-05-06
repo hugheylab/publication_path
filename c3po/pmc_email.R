@@ -80,9 +80,11 @@ dtFromXml = function(articleIds, articles, xpath, entrez = TRUE) {
   # if (isTRUE(entrez)) {
     nodes = xml_find_all(articles, xpath, flatten = FALSE)
     texts = lapply(nodes, xml_text)
+    if (length(texts) == 0) return(data.table(pmc = as.character(NA), email = as.character(NA))) 
     
     dt1 = data.table(pmc = articleIds, email = texts)
-    dt1 = dt1[, .(email = unlist(email)), by = pmc]
+    if (nrow(dt1) > 0)dt1 = dt1[, .(email = unlist(email)), by = pmc]
+    
   # } else {
     
   # }
@@ -96,6 +98,8 @@ getXmlFromEntrez = function(pmcIds, apiKey) {
   }
   return(a1)
 }
+timingsDT = data.table(step = as.character(), elapsed = as.numeric())
+timingsDT = addTimings(timingsDT, 'Start')
 
 url = 'ftp.ncbi.nlm.nih.gov/pub/pmc/oa_bulk/'
 pattern = '(?:non_|)comm_use.*\\.xml\\.tar\\.gz'
@@ -104,10 +108,14 @@ localDir = 'pmc_files'
 filesExist = TRUE
 
 if (isFALSE(filesExist)) {
+  timingsDT = addTimings(timingsDT, 'Start download and tar files')
   fNames = getRemoteFiles(localDir, url, pattern)
   fileDT = untarFiles(fNames, localDir)
+  timingsDT = addTimings(timingsDT, 'End download and untar files')
 } else {
+  timingsDT = addTimings(timingsDT, 'Start list files')
   fileDT = getFilesDT(localDir)
+  timingsDT = addTimings(timingsDT, 'End list files')
 }
 
 apiKeyFilename = 'c3po/api_key.csv'
@@ -121,11 +129,10 @@ if (file.exists(apiKeyFilename)) {
 
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
-timingsDT = data.table(step = as.character(), elapsed = as.numeric())
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
-timingsDT = addTimings(timingsDT, 'Start')
+timingsDT = addTimings(timingsDT, 'Start query pmc id')
 dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
-timingsDT = addTimings(timingsDT, 'Query pmc id')
+timingsDT = addTimings(timingsDT, 'End query pmc id')
 
 
 
