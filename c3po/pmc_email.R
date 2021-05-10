@@ -5,10 +5,13 @@ library('xml2')
 library('RPostgres')
 library('DBI')
 library('foreach')
+library('doParallel')
 library('RCurl')
 library('glue')
 library('stringr')
 options(timeout = 3600)
+registerDoParallel()
+
 
 
 # get PMCID from pmdb
@@ -147,7 +150,7 @@ numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
 dtNoFile = dt[hasFile == FALSE,]
 
 timingsDT = addTimings(timingsDT, 'Start loop over files')
-dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'), .combine = rbind) %do% {
+dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'), .combine = rbind) %dopar% {
   fileDTFil = fileDT[pmc == dtTmp$id_value,]
   articles = read_xml(file.path(localDir, fileDTFil$file_paths))
   articleIds = dtTmp$id_value
