@@ -57,7 +57,7 @@ getRemoteFiles = function(localDir, url, pattern) {
 untarFiles = function(fNames, localDir) {
   setwd(localDir)
   r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
-    untar(f$tar_filename)
+    untar(f$tar_filename, exdir = paste0('./', str_replace(f$tar_filename, '.xml.tar.gz', '')))
   }
   setwd('../')
   return(getFilesDT(localDir))
@@ -66,7 +66,7 @@ untarFiles = function(fNames, localDir) {
 getFilesDT = function(localDir) {
   fList = list.files(localDir, recursive = TRUE)
   fileDT = data.table(file_paths = fList)
-  fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.)')]
+  fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.nxml)')]
   fileDT = fileDT[!(grepl('comm_use', pmc)),]
   return(fileDT)
 }
@@ -131,7 +131,7 @@ if (file.exists(apiKeyFilename)) {
 
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
 
 
@@ -176,18 +176,18 @@ dtNewFromEntrez = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
 }
 timingsDT = addTimings(timingsDT, 'End loop over Entrez')
 
+dtNewFromEntrez[, pmc := paste0('PMC', pmc)]
 dtNew = rbind(dtNewFromFiles, dtNewFromEntrez)
 
 dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
 timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
-dtNew[, pmc := paste0('PMC', pmc)]
 dtNew = unique(dtNew)
 dtNew[, id_value := pmc]
-dtMerge = merge.data.table(dtNew, dt, by = 'id_value')
+dtMerge = merge(dtNew, dt, by = 'id_value')
 dtMerge = dtMerge[, id_value := NULL]
-dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
+dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
 
 dtMerge = dtMerge[, .(doi, email, pmc)]
 timingsDT = addTimings(timingsDT, 'End modify data.table')
@@ -202,6 +202,7 @@ timingsDT[, elapsed := elapsed - timingsDT$elapsed[1]]
 timingsDT[, diff := elapsed - shift(elapsed)]
 
 minElapsed = timingsDT$elapsed[nrow(timingsDT)] / 60
+minElapsed = timingsDT[.N]$elapsed / 60
 print(paste0('Finished, took ', as.character(minElapsed), ' minutes.'))
 
 dbDisconnect(con)
