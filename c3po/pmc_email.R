@@ -109,6 +109,7 @@ pattern = '(?:non_|)comm_use.*\\.xml\\.tar\\.gz'
 localDir = 'pmc_files'
 
 filesExist = TRUE
+fileDTFilename = file.path(localDir, 'fileDT.csv')
 
 if (isFALSE(filesExist)) {
   timingsDT = addTimings(timingsDT, 'Start download and tar files')
@@ -117,7 +118,12 @@ if (isFALSE(filesExist)) {
   timingsDT = addTimings(timingsDT, 'End download and untar files')
 } else {
   timingsDT = addTimings(timingsDT, 'Start list files')
-  fileDT = getFilesDT(localDir)
+  if(is.character(fileDTFilename)) {
+    fileDT = fread(fileDTFilename)
+  } else {
+    fileDT = getFilesDT(localDir)
+    fwrite(fileDT, fileDTFilename)
+  }
   timingsDT = addTimings(timingsDT, 'End list files')
 }
 
@@ -134,7 +140,7 @@ if (file.exists(apiKeyFilename)) {
 
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
 
 
@@ -149,10 +155,14 @@ numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
 
 dtNoFile = dt[hasFile == FALSE,]
 
+dt = merge(dt, fileDT, by.x = 'id_value', by.y = 'pmc')
+
 timingsDT = addTimings(timingsDT, 'Start loop over files')
+tick = 0
 dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'), .combine = rbind) %dopar% {
-  fileDTFil = fileDT[pmc == dtTmp$id_value,]
-  articles = read_xml(file.path(localDir, fileDTFil$file_paths))
+  tick = tick + 1
+  # fileDTFil = fileDT[pmc == dtTmp$id_value,]
+  articles = read_xml(file.path(localDir, dtTmp$file_paths))
   articleIds = dtTmp$id_value
   
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
@@ -187,9 +197,8 @@ timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
 dtNew = unique(dtNew)
-dtNew[, id_value := pmc]
-dtMerge = merge(dtNew, dt, by = 'id_value')
-dtMerge = dtMerge[, id_value := NULL]
+dtMerge = merge(dtNew, dt, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
+# set(dtMerge, j = 'id_value', value = NULL)
 dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
 
 dtMerge = dtMerge[, .(doi, email, pmc)]
@@ -201,7 +210,7 @@ dbWriteTable(con, 'pmc_email', dtMerge, append = TRUE)
 timingsDT = addTimings(timingsDT, 'End insert data.table')
 
 timingsDT = addTimings(timingsDT, 'End')
-timingsDT[, elapsed := elapsed - timingsDT$elapsed[1]]
+timingsDT[, elapsed := elapsed - elapsed[1]]
 timingsDT[, diff := elapsed - shift(elapsed)]
 
 minElapsed = timingsDT$elapsed[nrow(timingsDT)] / 60
