@@ -246,13 +246,15 @@ def confirm():
                 pg_query(db, 'insert', sql, email_url_tmp)
                 # error = cur.lastrowid
 
+                url_base = 'http://18.116.73.233:5000'
+
                 message_text = """\
                 <html>
                     <body>
                         <p>Hello,<br/> You have been registered to enter in publication information for the Hughey Lab publication pipeline project! Here is the paper you were registered to enter:<br/>
                         DOI: """ + article['doi'] + """<br/>
                         Title: """ + article['title'] + """<br/>
-                        Here is your unique URL: http://3.142.187.194:5000/enter/""" + url_id + """</p>
+                        Here is your unique URL: """ + url_base + """/enter/""" + url_id + """</p>
                     </body>
                 </html>
                 """
