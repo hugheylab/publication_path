@@ -1,7 +1,21 @@
 {% extends 'base.html' %}
-
-{% block header %}
-  <h1>{% block title %}Submit Pipeline Order{% endblock %}</h1>
+{% block title %}
+  {% if confirm == False %}
+    Enter
+    {% else %}
+      Confirm
+  {% endif %}
+{% endblock %}
+{% block navbar %}
+  <p>Step 1: Register&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Select Papers and Emails&nbsp;&nbsp;→&nbsp;&nbsp;
+  {% if confirm == False %}
+    <b>Step 3: Enter Steps</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+    Step 4: Confirm Information</p>
+    {% else %}
+      Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
+      <b>Step 4: Confirm Information</b></p>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -98,15 +112,14 @@ $(document).ready(function ()
       {% endif %}
     </ol>
   {% endif %}
-  <h3>{{ article_info.title }}</h3>
-  {{ article_info.journal_name }}<br/>
-  {{ article_info.pub_date }}<br/>
+  <h4>{{ article_info.title }}</h4>
   {% for author in author_doi %}
       {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
   {% endfor %}<br/>
+  <i>{{ article_info.journal_name }}, {{ article_info.pub_date }}</i><br/>
   {{ article_info.doi }}<br/>
   {% if allow_enter == True and has_completed == True %}
-    <h3 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h3>
+    <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
         <td style="width:25%">
@@ -139,8 +152,8 @@ $(document).ready(function ()
         </tr>
       {% endfor %}
     </table>
-  {% endif %}
-  <h3>Step Entry</h3>
+  {% endif %}<br/>
+  <h4>Step Entry</h4>
   <form id="package_form" action="" method="post">
     <table style="width:70%;">
       <tr>
@@ -165,12 +178,12 @@ $(document).ready(function ()
             <td style="vertical-align: bottom;">
               {% if confirm == False and allow_enter == True %}
                 <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
-                <input type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
+                <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
               {% endif %}
             </td>
             <td style="vertical-align: bottom; ">
               {% if not loop.last and confirm == False and allow_enter == True %}
-                <input  type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+                <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
               {% endif %}
             </td>
             <td>
@@ -227,15 +240,15 @@ $(document).ready(function ()
     </table><br/>
     {% if confirm == False and allow_enter == True %}
       <div class="panel-body">
-        <input type="submit" name="submit" value="Submit">
+        <input class="btn btn-success" type="submit" name="submit" value="Submit">
       </div>
     {% else %}
       {% if allow_enter == True %}
         <div class="panel-body">
-          <input type="submit" name="cancel" value="Go Back">
+          <input class="btn btn-secondary" type="submit" name="cancel" value="Go Back">
         </div><br/>
         <div class="panel-body">
-          <input type="submit" name="confirm" value="Confirm">
+          <input class="btn btn-success" type="submit" name="confirm" value="Confirm">
         </div>
       {% endif %}
     {% endif %}

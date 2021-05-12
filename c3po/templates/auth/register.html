@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
 
-{% block header %}
-  <h1>{% block title %}Register{% endblock %}</h1>
+{% block navbar %}
+  <p><b>Step 1: {% block title %}Register{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Select Papers and Emails&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 4: Confirm Information</p>
 {% endblock %}
 
 {% block content %}
@@ -25,6 +28,6 @@
     </select>--><br/><br/>
     <!--Please enter search values separated by commas:<br/><br/>-->
     <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required >{{ doi }}</textarea><br/><br/>
-    <input type="submit" value="Search">
+    <input class="btn btn-primary" type="submit" value="Search">
   </form>
 {% endblock %}

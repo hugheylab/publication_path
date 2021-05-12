@@ -1,14 +1,11 @@
 {% extends 'base.html' %}
-
-{% block header %}
-  <h1>{% block title %}Submit Pipeline Order{% endblock %}</h1>
-{% endblock %}
+{% block title %}Thanks{% endblock %}
 
 {% block content %}
   <p>{{ text}}</p>
   {% if thanks_type == "registration" %}
   <form method="post">
-    <input type="submit" value="Return to Home Page">
+    <input class="btn btn-secondary" type="submit" value="Return to Home Page">
   </form>
   {% endif %}
 

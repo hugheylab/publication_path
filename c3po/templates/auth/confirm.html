@@ -1,29 +1,10 @@
 {% extends 'base.html' %}
 
-{% block header %}
-  <h1>{% block title %}Confirm the paper(s) listed are correct, and select all email addresses to send publication path entry links to!{% endblock %}</h1>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    .collapsible {
-      background-color: #f1f1f1;
-      color: black;
-      cursor: pointer;
-      padding: 18px;
-      border: none;
-      text-align: left;
-      outline: none;
-      font-size: 15px;
-    }
-    
-    .active, .collapsible:hover {
-      background-color: #fff;
-    }
-    
-    .content2 {
-      display: none;
-      overflow: hidden;
-    }
-    </style>
+{% block navbar %}
+  <p>Step 1: Register&nbsp;&nbsp;→&nbsp;&nbsp;
+  <b>Step 2: {% block title %}Select{% endblock %} Papers and Emails</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 4: Confirm Information</p>
 {% endblock %}
 
 {% block content %}
@@ -34,6 +15,7 @@
           <!--<b>Article Information</b>-->
           <b>Instructions: </b>
           <ol>
+            <li>Please confirm that the paper(s) listed are correct.</li>
             <li>Select each email address per article you wish to send a link to. Selecing an email to the right will select all instances of that email found.</li>
             <li>You can click "Show/Hide Information" to view additional information (DOI, affiliations, etc.).</li>
             <li>If you need to go back to search again, click "Back" to return to the search screen and refine your search.</li>
@@ -52,21 +34,22 @@
       {% for article_info in article_infos %}
         <tr>
           <td style="width: 75%; border-bottom: 1px solid black;">
-            <h3>{{ article_info.article.title }}</h3>
-            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/><br/>{% endif %}
-            {{ article_info.article.journal_name }}<br/>
-            {{ article_info.article.pub_date }}<br/>
+            <b>{{ article_info.article.title }}</b><br/>
             {% for author in article_info.authors %}
                 {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
             {% endfor %}<br/>
-            <button type="button" class="collapsible">Show/Hide more information</button>
-            <div class="content2">
-              Affiliations:<br/>
-              {% for affiliation in article_info.affiliation_list %}
-                  {{ loop.index }}.&nbsp;{{affiliation}}<br/>
-              {% endfor %}<br/>
-              DOI:&nbsp;{{ article_info.article.doi }}<br/>
-              PMID:&nbsp;{{ article_info.article.pmid }}<br/>
+            <i>{{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}</i><br/>
+            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/>{% endif %}<br/>
+            <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">Show/Hide more information</button>
+            <div class="collapse" id="collapse-{{loop.index}}">
+              <div class="card card-body">
+                Affiliations:<br/>
+                {% for affiliation in article_info.affiliation_list %}
+                    {{ loop.index }}.&nbsp;{{affiliation}}<br/>
+                {% endfor %}<br/>
+                DOI:&nbsp;{{ article_info.article.doi }}<br/>
+                PMID:&nbsp;{{ article_info.article.pmid }}<br/>
+              </div>
             </div>
           </td>
           <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
@@ -82,24 +65,8 @@
         </tr>
       {% endfor %}
     </table>
-    <br/><input name="back" type="submit" value="Back">&nbsp;&nbsp;&nbsp;{% if all_has_emails == True %}<input type="submit" value="Confirm">{% endif %}
+    <br/><input name="back" class="btn btn-secondary" type="submit" value="Back">&nbsp;&nbsp;&nbsp;{% if all_has_emails == True %}<input type="submit" class="btn btn-success" value="Confirm">{% endif %}
   </form>
-  <script>
-    var coll = document.getElementsByClassName("collapsible");
-    var i;
-    
-    for (i = 0; i < coll.length; i++) {
-      coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.display === "block") {
-          content.style.display = "none";
-        } else {
-          content.style.display = "block";
-        }
-      });
-    }
-    </script>
   <script>
     function selectAll(source) {
       var email = source.getAttribute("name");

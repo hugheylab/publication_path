@@ -218,5 +218,3 @@ minElapsed = timingsDT[.N]$elapsed / 60
 print(paste0('Finished, took ', as.character(minElapsed), ' minutes.'))
 
 dbDisconnect(con)
-
-
