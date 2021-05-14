@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block navbar %}
-  <p>Step 1: Register&nbsp;&nbsp;→&nbsp;&nbsp;
+  <p>Step 1: Search&nbsp;&nbsp;→&nbsp;&nbsp;
   <b>Step 2: {% block title %}Select{% endblock %} Papers and Emails</b>&nbsp;&nbsp;→&nbsp;&nbsp;
   Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
   Step 4: Confirm Information</p>
@@ -24,7 +24,7 @@
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
-            <b>Toggle to select/deselect all matching emails:</b><br/>
+            <b>Toggle email for each instance:</b><br/>
             {% for email in email_list %}
               <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
             {% endfor %}
@@ -39,7 +39,7 @@
                 {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
             {% endfor %}<br/>
             <i>{{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}</i><br/>
-            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/>{% endif %}<br/>
+            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/>{% endif %}
             <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">Show/Hide more information</button>
             <div class="collapse" id="collapse-{{loop.index}}">
               <div class="card card-body">
@@ -50,7 +50,7 @@
                 DOI:&nbsp;{{ article_info.article.doi }}<br/>
                 PMID:&nbsp;{{ article_info.article.pmid }}<br/>
               </div>
-            </div>
+            </div><br/><br/>
           </td>
           <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if article_info.has_emails == True %}

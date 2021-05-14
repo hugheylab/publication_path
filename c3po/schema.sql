@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS email_doi (
   source TEXT NOT NULL
 );
 
-DELETE FROM email_doi WHERE source = "pmdb";
+DELETE FROM email_doi WHERE source = 'pmdb';
 
 CREATE TABLE article_info (
   id SERIAL,

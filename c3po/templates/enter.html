@@ -117,7 +117,7 @@ $(document).ready(function ()
       {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
   {% endfor %}<br/>
   <i>{{ article_info.journal_name }}, {{ article_info.pub_date }}</i><br/>
-  {{ article_info.doi }}<br/>
+  DOI:&nbsp;{{ article_info.doi }}<br/>
   {% if allow_enter == True and has_completed == True %}
     <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
