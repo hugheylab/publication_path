@@ -81,15 +81,15 @@ addTimings = function(timingsDT, stepName) {
 
 dtFromXml = function(articleIds, articles, xpath, entrez = TRUE) {
   # if (isTRUE(entrez)) {
-    nodes = xml_find_all(articles, xpath, flatten = FALSE)
-    texts = lapply(nodes, xml_text)
-    if (length(texts) == 0) return(data.table(pmc = as.character(NA), email = as.character(NA))) 
-    
-    dt1 = data.table(pmc = articleIds, email = texts)
-    if (nrow(dt1) > 0)dt1 = dt1[, .(email = unlist(email)), by = pmc]
-    
+  nodes = xml_find_all(articles, xpath, flatten = FALSE)
+  texts = lapply(nodes, xml_text)
+  if (length(texts) == 0) return(data.table(pmc = as.character(NA), email = as.character(NA))) 
+  
+  dt1 = data.table(pmc = articleIds, email = texts)
+  if (nrow(dt1) > 0)dt1 = dt1[, .(email = unlist(email)), by = pmc]
+  
   # } else {
-    
+  
   # }
 }
 
@@ -118,7 +118,7 @@ if (isFALSE(filesExist)) {
   timingsDT = addTimings(timingsDT, 'End download and untar files')
 } else {
   timingsDT = addTimings(timingsDT, 'Start list files')
-  if(is.character(fileDTFilename)) {
+  if(file.exists(fileDTFilename)) {
     fileDT = fread(fileDTFilename)
   } else {
     fileDT = getFilesDT(localDir)
@@ -139,6 +139,8 @@ if (file.exists(apiKeyFilename)) {
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
 con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
+DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
+DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
 dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
@@ -156,10 +158,11 @@ numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
 dtNoFile = dt[hasFile == FALSE,]
 
 dt = merge(dt, fileDT, by.x = 'id_value', by.y = 'pmc')
+dbDisconnect(con)
 
 timingsDT = addTimings(timingsDT, 'Start loop over files')
 tick = 0
-dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'), .combine = rbind) %dopar% {
+fileResults = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row')) %dopar% {
   tick = tick + 1
   # fileDTFil = fileDT[pmc == dtTmp$id_value,]
   articles = read_xml(file.path(localDir, dtTmp$file_paths))
@@ -167,12 +170,17 @@ dtNewFromFiles = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row
   
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
-  rbind(dt1, dt2)
+  dt3 = rbind(dt1, dt2)
+  dt3[, pmc := paste0('PMC', pmc)]
+  con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+  dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  # dt3
+  dbDisconnect(con)
 }
 timingsDT = addTimings(timingsDT, 'End loop over files')
 
 timingsDT = addTimings(timingsDT, 'Start loop over Entrez')
-dtNewFromEntrez = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
+entrezResults = foreach(i = 0:(numChunks-1)) %do% {
   startNum = (i * chunkSize) + 1
   endNum = startNum + chunkSize - 1
   dtTmp = dtNoFile[startNum:endNum,]
@@ -184,13 +192,18 @@ dtNewFromEntrez = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
   
-  rbind(dt1, dt2)
-
+  dt3 = rbind(dt1, dt2)
+  
+  con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+  dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  # dt3
+  dbDisconnect(con)
+  
 }
 timingsDT = addTimings(timingsDT, 'End loop over Entrez')
 
-dtNewFromEntrez[, pmc := paste0('PMC', pmc)]
-dtNew = rbind(dtNewFromFiles, dtNewFromEntrez)
+con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+dtNew = setDT(dbGetQuery(con, 'SELECT * FROM pmc_email_tmp;'))
 
 dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
 timingsDT = addTimings(timingsDT, 'Query doi')
