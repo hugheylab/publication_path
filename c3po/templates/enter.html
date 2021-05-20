@@ -102,7 +102,7 @@ $(document).ready(function ()
     <ol>
       {% if confirm == False %}
         <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission. Submission dates are optional.</li>
-        <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
+        <li>Search for and select journal in the dropdown.</li>
         <li>Add/delete steps as necessary. You can also use the arrows to move steps up or down the list.</li>
         <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
         <li>If no errors are found, you will be taken to a final confirmation screen.</li>
@@ -112,24 +112,30 @@ $(document).ready(function ()
       {% endif %}
     </ol>
   {% endif %}
-  <h4>{{ article_info.title }}</h4>
-  {% for author in author_doi %}
-      {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
-  {% endfor %}<br/>
-  <i>{{ article_info.journal_name }}, {{ article_info.pub_date }}</i><br/>
-  DOI:&nbsp;{{ article_info.doi }}<br/>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">{{ article_info.title }}</h5>
+      <h6 class="card-subtitle mb-2 text-muted">
+        {% for author in author_doi %}
+            {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
+        {% endfor %}<br/>
+        {{ article_info.journal_name }}, {{ article_info.pub_date }}<br/>
+        DOI:&nbsp;{{ article_info.doi }}
+      </h6>
+    </div>
+  </div>
   {% if allow_enter == True and has_completed == True %}
     <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
         <td style="width:25%">
-          Step
-        </td>
-        <td style="width:25%">
-          First Submission Date
+          <b>Step</b>
         </td>
         <td style="width:40%">
-          Journal
+          <b>Journal</b>
+        </td>
+        <td style="width:25%">
+          <b>First Submission Date</b>
         </td>
         <td style="width:10%">
           &nbsp;
@@ -139,15 +145,16 @@ $(document).ready(function ()
         <tr>
           <td>
             {{ path_item.step }}
-            {% if loop.last %}
-              &nbsp;(Final Submission)
-            {% endif %}
-          </td>
-          <td>
-            {{ path_item.submission_date }}
           </td>
           <td>
             {{ path_item.journal }}
+          </td>
+          <td>
+            {% if path_item.submission_date != NULL and path_item.submission_date != "" and path_item.submission_date != None %}
+              {{ path_item.submission_date }}
+            {% else %}
+              NA
+            {% endif %}
           </td>
         </tr>
       {% endfor %}
@@ -155,67 +162,61 @@ $(document).ready(function ()
   {% endif %}<br/>
   <h4>Step Entry</h4>
   <form id="package_form" action="" method="post">
-    <table style="width:70%;">
+    <table style="width:100%;">
       <tr>
-        <td style="width:5%">
-          &nbsp;
-        </td>
-        <td style="width:10%">
-          &nbsp;
-        </td>
+        {% if confirm == False %}
+          <td style="width:5%">
+            &nbsp;
+          </td>
+          <td style="width:10%">
+            &nbsp;
+          </td>
+        {% endif %}
         <td style="width:15%">
-          Step
-        </td>
-        <td style="width:25%">
-          First Submission Date
+          <b>Step</b>
         </td>
         <td style="width:40%">
-          Journal
+          <b>Journal</b>
         </td>
+        <td style="width:25%">
+          <b>First Submission Date</b>
+        </td>
+        {% if confirm == True %}
+          <td style="width:5%">
+            &nbsp;
+          </td>
+          <td style="width:10%">
+            &nbsp;
+          </td>
+        {% endif %}
       </tr>
         {% for path_item in session["path_list"] %}
           <tr>
-            <td style="vertical-align: bottom;">
-              {% if confirm == False and allow_enter == True %}
-                <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
-                <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
-              {% endif %}
-            </td>
-            <td style="vertical-align: bottom; ">
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
-              {% endif %}
-            </td>
+            {% if confirm == False %}
+              <td style="vertical-align: bottom;">
+                {% if confirm == False and allow_enter == True %}
+                  <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
+                  <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
+                {% endif %}
+              </td>
+              <td style="vertical-align: bottom; ">
+                {% if not loop.last and confirm == False and allow_enter == True %}
+                  <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+                {% endif %}
+              </td>
+            {% endif %}
             <td>
               {% if not loop.last and confirm == False and allow_enter == True %}
-                {% if not loop.first %}
-                  <input type="submit" class="button-link" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
-                {% endif %}
-                {% if not loop.revindex0 < 2 %}
-                  <input type="submit" class="button-link" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
-                {% endif %}
+                  <input type="submit" class="btn btn-outline-info {% if loop.first %} disabled {% endif %}" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+                  <input type="submit" class="btn btn-outline-info {% if loop.revindex0 < 2 %} disabled {% endif %}" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
 
               {% endif %}
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
-              {% if loop.last %}
-                &nbsp;(Final Submission)
-              {% endif %}<br/>
+              <br/>
               {% if (not path_item.error == '') and path_item.show_error %}
                 <p style="color:red">ERROR:&nbsp;{{ path_item.error }}</p>
-              {% endif %}
-            </td>
-            <td>
-              {% if confirm == False and allow_enter == True %}
-                <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
-              {% else %}
-                <input hidden type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
-                {% if path_item.submit_date != NULL and path_item.submit_date != "" %}
-                  {{ path_item.submit_date }}
-                {% else %}
-                  Not specified.
-                {% endif %}
               {% endif %}
             </td>
             <td>
@@ -235,6 +236,26 @@ $(document).ready(function ()
                 {{ path_item.journal }}
               {% endif %}
             </td>
+            <td>
+              {% if confirm == False and allow_enter == True %}
+                <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
+              {% else %}
+                <input hidden type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
+                {% if path_item.submit_date != NULL and path_item.submit_date != "" %}
+                  {{ path_item.submit_date }}
+                {% else %}
+                  NA
+                {% endif %}
+              {% endif %}
+            </td>
+            {% if confirm == True %}
+              <td style="width:5%">
+                &nbsp;
+              </td>
+              <td style="width:10%">
+                &nbsp;
+              </td>
+            {% endif %}
           </tr>
         {% endfor %}
     </table><br/>

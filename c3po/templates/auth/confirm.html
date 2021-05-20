@@ -38,7 +38,7 @@
             {% for author in article_info.authors %}
                 {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
             {% endfor %}<br/>
-            <i>{{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}</i><br/>
+            {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
             {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/>{% endif %}
             <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">Show/Hide more information</button>
             <div class="collapse" id="collapse-{{loop.index}}">

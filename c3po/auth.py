@@ -138,7 +138,7 @@ def confirm():
     #     'SELECT * FROM article_info WHERE doi = %s', (doi,)
     # )
     # articles = cur.fetchall()
-    articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi IN ' + query_val, ())
+    articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi IN ' + query_val + ' ORDER BY pub_date ASC', ())
     print(articles)
     print(articles[0])
     print(articles[0]["title"])

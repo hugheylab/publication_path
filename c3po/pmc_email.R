@@ -138,11 +138,11 @@ if (file.exists(apiKeyFilename)) {
 
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
-con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
+con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
 DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
 DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC LIMIT 10000;'))
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
 
 
@@ -171,7 +171,6 @@ fileResults = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'))
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
   dt3 = rbind(dt1, dt2)
-  dt3[, pmc := paste0('PMC', pmc)]
   con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
   dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
   # dt3
@@ -193,6 +192,7 @@ entrezResults = foreach(i = 0:(numChunks-1)) %do% {
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
   
   dt3 = rbind(dt1, dt2)
+  dt3[, pmc := paste0('PMC', pmc)]
   
   con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
   dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
@@ -210,6 +210,7 @@ timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
 dtNew = unique(dtNew)
+dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 dtMerge = merge(dtNew, dt, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
 # set(dtMerge, j = 'id_value', value = NULL)
 dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
@@ -220,6 +221,7 @@ timingsDT = addTimings(timingsDT, 'End modify data.table')
 timingsDT = addTimings(timingsDT, 'Start insert data.table')
 dbExecute(con, 'DELETE FROM pmc_email;')
 dbWriteTable(con, 'pmc_email', dtMerge, append = TRUE)
+
 timingsDT = addTimings(timingsDT, 'End insert data.table')
 
 timingsDT = addTimings(timingsDT, 'End')
