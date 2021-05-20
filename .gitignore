@@ -1,4 +1,3 @@
-
 .DS_Store
 c3po/__pycache__
 instance
@@ -14,3 +13,5 @@ publication_path.Rproj
 c3po/api_key.csv
 pmc_files/*
 c3po/database_external.ini
+.httr-oauth
+tokens/token.rds

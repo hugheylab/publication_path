@@ -128,16 +128,16 @@ $(document).ready(function ()
     <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
-        <td style="width:25%">
+        <td style="width:25%;border-bottom: 1px solid black;">
           <b>Step</b>
         </td>
-        <td style="width:40%">
+        <td style="width:40%;border-bottom: 1px solid black;">
           <b>Journal</b>
         </td>
-        <td style="width:25%">
+        <td style="width:25%;border-bottom: 1px solid black;">
           <b>First Submission Date</b>
         </td>
-        <td style="width:10%">
+        <td style="width:10%;border-bottom: 1px solid black;">
           &nbsp;
         </td>
       </tr>
@@ -165,27 +165,27 @@ $(document).ready(function ()
     <table style="width:100%;">
       <tr>
         {% if confirm == False %}
-          <td style="width:5%">
+          <td style="width:5%;border-bottom: 1px solid black;">
             &nbsp;
           </td>
-          <td style="width:10%">
+          <td style="width:10%;border-bottom: 1px solid black;">
             &nbsp;
           </td>
         {% endif %}
-        <td style="width:15%">
+        <td style="width:15%;border-bottom: 1px solid black;">
           <b>Step</b>
         </td>
-        <td style="width:40%">
+        <td style="width:40%;border-bottom: 1px solid black;">
           <b>Journal</b>
         </td>
-        <td style="width:25%">
+        <td style="width:25%;border-bottom: 1px solid black;">
           <b>First Submission Date</b>
         </td>
         {% if confirm == True %}
-          <td style="width:5%">
+          <td style="width:5%;border-bottom: 1px solid black;">
             &nbsp;
           </td>
-          <td style="width:10%">
+          <td style="width:10%";border-bottom: 1px solid black;>
             &nbsp;
           </td>
         {% endif %}
@@ -193,19 +193,19 @@ $(document).ready(function ()
         {% for path_item in session["path_list"] %}
           <tr>
             {% if confirm == False %}
-              <td style="vertical-align: bottom;">
+              <td style="vertical-align: bottom;padding: 5px;">
                 {% if confirm == False and allow_enter == True %}
                   <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
                   <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
                 {% endif %}
               </td>
-              <td style="vertical-align: bottom; ">
+              <td style="vertical-align: bottom; padding: 5px;">
                 {% if not loop.last and confirm == False and allow_enter == True %}
                   <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
                 {% endif %}
               </td>
             {% endif %}
-            <td>
+            <td style="padding: 5px;">
               {% if not loop.last and confirm == False and allow_enter == True %}
                   <input type="submit" class="btn btn-outline-info {% if loop.first %} disabled {% endif %}" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
                   <input type="submit" class="btn btn-outline-info {% if loop.revindex0 < 2 %} disabled {% endif %}" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
@@ -219,7 +219,7 @@ $(document).ready(function ()
                 <p style="color:red">ERROR:&nbsp;{{ path_item.error }}</p>
               {% endif %}
             </td>
-            <td>
+            <td style="padding: 5px;">
               {% if not loop.last and confirm == False and allow_enter == True %}
                 <select class="js-example-basic-single" style="width: 100%;" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
                   <option value="">--None Selected--</option>
@@ -236,7 +236,7 @@ $(document).ready(function ()
                 {{ path_item.journal }}
               {% endif %}
             </td>
-            <td>
+            <td style="padding: 5px;">
               {% if confirm == False and allow_enter == True %}
                 <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
               {% else %}
@@ -249,10 +249,10 @@ $(document).ready(function ()
               {% endif %}
             </td>
             {% if confirm == True %}
-              <td style="width:5%">
+              <td style="width:5%;padding: 5px;">
                 &nbsp;
               </td>
-              <td style="width:10%">
+              <td style="width:10%;padding: 5px;">
                 &nbsp;
               </td>
             {% endif %}

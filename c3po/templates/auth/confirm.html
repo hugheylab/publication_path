@@ -56,7 +56,7 @@
             {% if article_info.has_emails == True %}
               <br/>
               {% for email in article_info.emails %}
-                  <input class="checkable" type="checkbox" name="{{article_info.article.doi + '---' + email.email}}" id="{{article_info.article.doi + '---' + email.email}}" />&nbsp;{{email.email}}&nbsp;&nbsp;(Source: {{email.source}})<br/>
+                  <input class="checkable" type="checkbox" name="{{article_info.article.doi + '---' + email.email}}" id="{{article_info.article.doi + '---' + email.email}}" />&nbsp;{{email.email}}<!--&nbsp;&nbsp;(Source: {{email.source}})--><br/>
               {% endfor %}
             {% else %}
               <h3>No emails addresses found.</h3>

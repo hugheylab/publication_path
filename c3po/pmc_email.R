@@ -9,12 +9,23 @@ library('doParallel')
 library('RCurl')
 library('glue')
 library('stringr')
+library('rdrop2')
 options(timeout = 3600)
 registerDoParallel()
+token = readRDS('tokens/token.rds')
 
 
 
-# get PMCID from pmdb
+#Connect to DB
+connectDB = function() {
+  return(dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password'))}
+
+# Returns data.table of existing pmc_email table
+getExisting = function() {
+  con = connectDB()
+  dt = setDT(dbGetQuery(con, 'SELECT * FROM pmc_email;'))
+  dbDisconnect(con)
+  return(dt)}
 
 
 # Replace the two below with the pmparser version
@@ -138,16 +149,21 @@ if (file.exists(apiKeyFilename)) {
 
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
-con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
-DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
-DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
+retry = TRUE
+
+con = connectDB()
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
 dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
-
-
-
-
+if (isTRUE(retry)) {
+  dtFound = setDT(dbGetQuery(con, 'SELECT DISTINCT(pmc) FROM pmc_parse_status;'))
+  dt = dt[!(id_value %in% dtFound$pmc),]
+} else {
+  DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
+  DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_parse_status;')
+  DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
+  DBI::dbCreateTable(con, 'pmc_parse_status', data.table(pmc = as.character(NA)))
+}
 
 dt[, hasFile := (id_value %in% fileDT$pmc)]
 
@@ -157,12 +173,12 @@ numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
 
 dtNoFile = dt[hasFile == FALSE,]
 
-dt = merge(dt, fileDT, by.x = 'id_value', by.y = 'pmc')
+dtFile = merge(dt, fileDT, by.x = 'id_value', by.y = 'pmc')
 dbDisconnect(con)
 
 timingsDT = addTimings(timingsDT, 'Start loop over files')
 tick = 0
-fileResults = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row')) %dopar% {
+fileResults = foreach(dtTmp = iterators::iter(dtFile, by = 'row')) %dopar% {
   tick = tick + 1
   # fileDTFil = fileDT[pmc == dtTmp$id_value,]
   articles = read_xml(file.path(localDir, dtTmp$file_paths))
@@ -171,8 +187,9 @@ fileResults = foreach(dtTmp = iterators::iter(dt[hasFile == TRUE,], by = 'row'))
   dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
   dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
   dt3 = rbind(dt1, dt2)
-  con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+  con = connectDB()
   dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = articleIds), append = TRUE)
   # dt3
   dbDisconnect(con)
 }
@@ -194,15 +211,16 @@ entrezResults = foreach(i = 0:(numChunks-1)) %do% {
   dt3 = rbind(dt1, dt2)
   dt3[, pmc := paste0('PMC', pmc)]
   
-  con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+  con = connectDB()
   dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = articleIds), append = TRUE)
   # dt3
   dbDisconnect(con)
   
 }
 timingsDT = addTimings(timingsDT, 'End loop over Entrez')
 
-con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password')
+con = connectDB()
 dtNew = setDT(dbGetQuery(con, 'SELECT * FROM pmc_email_tmp;'))
 
 dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
@@ -210,13 +228,16 @@ timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
 dtNew = unique(dtNew)
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 dtMerge = merge(dtNew, dt, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
 # set(dtMerge, j = 'id_value', value = NULL)
 dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
 
 dtMerge = dtMerge[, .(doi, email, pmc)]
 timingsDT = addTimings(timingsDT, 'End modify data.table')
+
+fwrite(dtMerge, file.path(localDir, 'pmc_email.csv'))
+drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
+
 
 timingsDT = addTimings(timingsDT, 'Start insert data.table')
 dbExecute(con, 'DELETE FROM pmc_email;')
