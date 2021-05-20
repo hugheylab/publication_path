@@ -13,3 +13,4 @@ publication_path.Rproj
 .Rhistory
 c3po/api_key.csv
 pmc_files/*
+c3po/database_external.ini
