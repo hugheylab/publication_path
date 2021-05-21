@@ -176,13 +176,16 @@ def confirm():
         for author in authors:
             if author['author_affiliation'] in affiliation_list:
                 aff_num = affiliation_list.index(author['author_affiliation']) + 1
-            else:
+            elif author['author_affiliation'] != None:
                 affiliation_list.append(author['author_affiliation'])
                 aff_num = len(affiliation_list)
             if len(auth_aff_list) > 0 and auth_aff_list[len(auth_aff_list) - 1].author['author_pos'] == author['author_pos']:
                 auth_aff_list[len(auth_aff_list) - 1].affiliation_nums.append(aff_num)
             else:
-                auth_aff = author_affiliations(author, [aff_num])
+                if author['author_affiliation'] == None:
+                    auth_aff = author_affiliations(author, [])
+                else:
+                    auth_aff = author_affiliations(author, [aff_num])
                 auth_aff_list.append(auth_aff)
 
         # cur.execute(

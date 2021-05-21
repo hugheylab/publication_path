@@ -22,7 +22,7 @@ CREATE TABLE author_doi (
   author_pos INTEGER,
   author_name TEXT NOT NULL,
   affiliation_pos INTEGER,
-  author_affiliation TEXT NOT NULL,
+  author_affiliation TEXT,
   doi TEXT NOT NULL
 );
 
