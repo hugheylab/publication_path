@@ -2,9 +2,8 @@
 
 {% block navbar %}
   <p>Step 1: Search&nbsp;&nbsp;→&nbsp;&nbsp;
-  <b>Step 2: {% block title %}Select{% endblock %} Papers and Emails</b>&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 4: Confirm Information</p>
+  <b>Step 2: {% block title %}Select{% endblock %} articles and email addresses</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 3: Enter submission path</p>
 {% endblock %}
 
 {% block content %}
@@ -14,17 +13,16 @@
         <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
           <!--<b>Article Information</b>-->
           <b>Instructions: </b>
-          <ol>
-            <li>Please confirm that the paper(s) listed are correct.</li>
-            <li>Select each email address per article you wish to send a link to. Selecing an email to the right will select all instances of that email found.</li>
-            <li>You can click "Show/Hide Information" to view additional information (DOI, affiliations, etc.).</li>
-            <li>If you need to go back to search again, click "Back" to return to the search screen and refine your search.</li>
-            <li>Once you have selected all email addresses per article to send links to, click "Confirm" to generate and send out the links.</li>
-          </ol>
+          <ul>
+            <li>Select the desired combination of articles and email addresses.</li>
+            <li>Click More information to show or hide author affiliations and article IDs.</li>
+            <li>If necessary, click Back to return to the search page.</li>
+            <li>Click Confirm to send an email to the specified email address for each specified article. Each email will contain a unique URL to enter the article’s submission path.</li>
+          </ul>
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
-            <b>Toggle email for each instance:</b><br/>
+            <b>Toggle email for each article:</b><br/>
             {% for email in email_list %}
               <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
             {% endfor %}
@@ -39,8 +37,8 @@
                 {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
             {% endfor %}<br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
-            {% if article_info.has_path == True %}<b style="color: orange;">*Path has already been entered for this article. You can still resend links to re-enter if desired!</b><br/>{% endif %}
-            <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">Show/Hide more information</button>
+            {% if article_info.has_path == True %}<b style="color: orange;">*Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
+            <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
             <div class="collapse" id="collapse-{{loop.index}}">
               <div class="card card-body">
                 Affiliations:<br/>

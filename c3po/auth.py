@@ -254,15 +254,15 @@ def confirm():
                 message_text = """\
                 <html>
                     <body>
-                        <p>Hello,<br/> You have been registered to enter in publication information for the Hughey Lab publication pipeline project! Here is the paper you were registered to enter:<br/>
-                        DOI: """ + article['doi'] + """<br/>
-                        Title: """ + article['title'] + """<br/>
-                        Here is your unique URL: """ + url_base + """/enter/""" + url_id + """</p>
+                        <p>Hello,<br/> Here is your unique URL to enter the submission path for \"""" + article['title'] + """\":<br/>
+                        """ + url_base + """/enter/""" + url_id + """<br/>
+                        Thank you in advance!<br/>
+                        If you didn't request this email, please let us know at hugheylab.publishing.pipeline@gmail.com</p>
                     </body>
                 </html>
                 """
 
-                send_email(receiver_email = email['email'], message_text = message_text, subject = ('Hughey Lab Publication Path Entry For DOI ' + article['doi']), db = db)
+                send_email(receiver_email = email['email'], message_text = message_text, subject = ('Submission Path Entry For DOI ' + article['doi']), db = db)
 
                 # email_urls.append(email_url_tmp)
         if sentEmail == True:

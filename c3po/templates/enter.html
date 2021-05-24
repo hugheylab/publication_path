@@ -1,21 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}
-  {% if confirm == False %}
-    Enter
-    {% else %}
-      Confirm
-  {% endif %}
-{% endblock %}
+
+  
+
 {% block navbar %}
-  <p>Step 1: Register&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 2: Select Papers and Emails&nbsp;&nbsp;→&nbsp;&nbsp;
-  {% if confirm == False %}
-    <b>Step 3: Enter Steps</b>&nbsp;&nbsp;→&nbsp;&nbsp;
-    Step 4: Confirm Information</p>
-    {% else %}
-      Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
-      <b>Step 4: Confirm Information</b></p>
-  {% endif %}
+  <p>Step 1: Search&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Select articles and email addresses&nbsp;&nbsp;→&nbsp;&nbsp;
+  <b>Step 3: {% block title %}Enter{% endblock %} submission path</b></p>
 {% endblock %}
 
 {% block content %}
@@ -99,18 +89,20 @@ $(document).ready(function ()
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
     {% else %}
     <b>Instructions: </b>
-    <ol>
+    <ul>
       {% if confirm == False %}
-        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission. Submission dates are optional.</li>
-        <li>Search for and select journal in the dropdown.</li>
-        <li>Add/delete steps as necessary. You can also use the arrows to move steps up or down the list.</li>
-        <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
-        <li>If no errors are found, you will be taken to a final confirmation screen.</li>
+        <li>Enter the submission steps in chronological order for the specified article.</li>
+        <li>Consider only the first submission to each journal, so ignoring any subsequent resubmissions.</li>
+        <li>Search for and select the journal for each step from the dropdown menu.</li>
+        <li>First submission dates are optional, but appreciated.</li>
+        <li>Use the buttons to add, delete, and reorder steps as necessary.</li>
+        <li>Click Submit to check for possible entry errors and then go to a confirmation page.</li>
       {% else %}
-        <li>If you realize you made a mistake, click "Cancel" to return to the entry screen.</li>
-        <li>Once you have confirmed all streps are entered correctly, click "Confirm" to finish submitting the information.</li>
+        <li>Verify that the provided submission path is correct.</li>
+        <li>If necessary, click Back to return to the entry page.</li>
+        <li>When ready, click Confirm to submit the information.</li>
       {% endif %}
-    </ol>
+    </ul>
   {% endif %}
   <div class="card">
     <div class="card-body">
@@ -128,16 +120,16 @@ $(document).ready(function ()
     <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
-        <td style="width:25%;border-bottom: 1px solid black;">
+        <td style="width:25%;">
           <b>Step</b>
         </td>
-        <td style="width:40%;border-bottom: 1px solid black;">
+        <td style="width:40%;">
           <b>Journal</b>
         </td>
-        <td style="width:25%;border-bottom: 1px solid black;">
-          <b>First Submission Date</b>
+        <td style="width:25%;">
+          <b>First submission date</b>
         </td>
-        <td style="width:10%;border-bottom: 1px solid black;">
+        <td style="width:10%;">
           &nbsp;
         </td>
       </tr>
@@ -160,32 +152,34 @@ $(document).ready(function ()
       {% endfor %}
     </table>
   {% endif %}<br/>
-  <h4>Step Entry</h4>
   <form id="package_form" action="" method="post">
     <table style="width:100%;">
       <tr>
         {% if confirm == False %}
-          <td style="width:5%;border-bottom: 1px solid black;">
+          <td style="width:5%;">
             &nbsp;
           </td>
-          <td style="width:10%;border-bottom: 1px solid black;">
+          <td style="width:10%;">
+            &nbsp;
+          </td>
+          <td style="width:10%;">
             &nbsp;
           </td>
         {% endif %}
-        <td style="width:15%;border-bottom: 1px solid black;">
+        <td style="width:5%;">
           <b>Step</b>
         </td>
-        <td style="width:40%;border-bottom: 1px solid black;">
+        <td style="width:40%;">
           <b>Journal</b>
         </td>
-        <td style="width:25%;border-bottom: 1px solid black;">
-          <b>First Submission Date</b>
+        <td style="width:25%;">
+          <b>First submission date</b>
         </td>
         {% if confirm == True %}
-          <td style="width:5%;border-bottom: 1px solid black;">
+          <td style="width:5%;">
             &nbsp;
           </td>
-          <td style="width:10%";border-bottom: 1px solid black;>
+          <td style="width:10%">
             &nbsp;
           </td>
         {% endif %}
@@ -196,21 +190,23 @@ $(document).ready(function ()
               <td style="vertical-align: bottom;padding: 5px;">
                 {% if confirm == False and allow_enter == True %}
                   <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
-                  <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
+                  <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add step above">
                 {% endif %}
               </td>
               <td style="vertical-align: bottom; padding: 5px;">
                 {% if not loop.last and confirm == False and allow_enter == True %}
-                  <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
+                  <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete step" />
+                {% endif %}
+              </td>
+              <td style="vertical-align: bottom; padding: 5px;">
+                {% if not loop.last and confirm == False and allow_enter == True %}
+                    <input type="submit" class="btn btn-outline-info {% if loop.first %} disabled {% endif %}" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+                    <input type="submit" class="btn btn-outline-info {% if loop.revindex0 < 2 %} disabled {% endif %}" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
+  
                 {% endif %}
               </td>
             {% endif %}
             <td style="padding: 5px;">
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                  <input type="submit" class="btn btn-outline-info {% if loop.first %} disabled {% endif %}" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
-                  <input type="submit" class="btn btn-outline-info {% if loop.revindex0 < 2 %} disabled {% endif %}" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
-
-              {% endif %}
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
@@ -266,7 +262,7 @@ $(document).ready(function ()
     {% else %}
       {% if allow_enter == True %}
         <div class="panel-body">
-          <input class="btn btn-secondary" type="submit" name="cancel" value="Go Back">
+          <input class="btn btn-secondary" type="submit" name="cancel" value="Back">
         </div><br/>
         <div class="panel-body">
           <input class="btn btn-success" type="submit" name="confirm" value="Confirm">

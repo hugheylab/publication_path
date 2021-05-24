@@ -2,25 +2,24 @@
 
 {% block navbar %}
   <p><b>Step 1: {% block title %}Search{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 2: Select Papers and Emails&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 3: Enter Steps&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 4: Confirm Information</p>
+  Step 2: Select articles and email addresses&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 3: Enter submission path</p>
 {% endblock %}
 
 {% block content %}
   <b>Instructions: </b>
-  <ol>
-    <li>Select if you are searching by email or DOI/ PMID</li>
-    <li>Enter your search term(s), separated by commas if there are multiple.</li>
-  </ol>
+  <ul>
+    <li>Select whether to search by email address or DOI / PMID.</li>
+    <li>Enter one or more search terms as a comma-separated list.</li>
+  </ul>
   <form method="post">
     <!--Search Type<br/><br/>-->
     <input type="radio" id="email" name="search_type" value="email"
       {% if search_type == 'email' or search_type == Null %} checked {% endif %}>
-    <label for="email">Email</label>
+    <label for="email">Email address</label>
     <input type="radio" id="doi" name="search_type" value="doi"
       {% if search_type == 'doi' %} checked {% endif %}>
-    <label for="doi">DOI/ Pubmed ID</label>
+    <label for="doi">DOI / Pubmed ID</label>
     <!--<select name="search_type" id="search_type">
       <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI/ Pubmed ID</option>
       <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>
