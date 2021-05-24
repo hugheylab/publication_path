@@ -13,7 +13,7 @@ bp = Blueprint('thanks', __name__, url_prefix='/thanks')
 @bp.route('/<thanks_type>', methods=('GET', 'POST'))
 def thanks(thanks_type):
 
-    text = 'Thank you for registering to participate, all applicable authors should receive emails with links shortly! Each email address will receive individual emails for each article they were registered for. Simply click on the link in the email to enter information to the relevant article.'
+    text = 'Thank you for registering to participate! All applicable authors should soon receive an email for each specified article. Each email will contain a unique URL to enter that article\'s submission path.'
     if thanks_type == "submission":
         text = 'Thank you for submitting your publication information!'
 
