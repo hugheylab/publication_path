@@ -34,7 +34,7 @@
           <td style="width: 75%; border-bottom: 1px solid black;">
             <b>{{ article_info.article.title }}</b><br/>
             {% for author in article_info.authors %}
-                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %}{% endif %}
+                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}
             {% endfor %}<br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
             {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
