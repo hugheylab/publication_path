@@ -88,7 +88,7 @@ $(document).ready(function ()
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
     {% else %}
-    <b>Instructions: </b>
+    <b>Instructions </b>
     <ul>
       {% if confirm == False %}
         <li>Enter the submission steps in chronological order for the specified article.</li>
@@ -109,7 +109,7 @@ $(document).ready(function ()
       <h5 class="card-title">{{ article_info.title }}</h5>
       <h6 class="card-subtitle mb-2 text-muted">
         {% for author in author_doi %}
-            {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
+            {{author.author['author_name']}}{% if not loop.last %},{% endif %}
         {% endfor %}<br/>
         {{ article_info.journal_name }}, {{ article_info.pub_date }}<br/>
         DOI:&nbsp;{{ article_info.doi }}

@@ -12,7 +12,7 @@
       <tr>
         <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
           <!--<b>Article Information</b>-->
-          <b>Instructions: </b>
+          <b>Instructions </b>
           <ul>
             <li>Select the desired combination of articles and email addresses.</li>
             <li>Click More information to show or hide author affiliations and article IDs.</li>
@@ -22,7 +22,7 @@
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
             {% if email_list %}
-            <b>Toggle email for each article:</b><br/>
+            <b>Toggle email address for each article:</b><br/>
             {% for email in email_list %}
               <input type="checkbox" name="{{email}}" id="{{email}}" onClick="selectAll(this)" />&nbsp;{{email}}<br/>
             {% endfor %}
@@ -34,10 +34,10 @@
           <td style="width: 75%; border-bottom: 1px solid black;">
             <b>{{ article_info.article.title }}</b><br/>
             {% for author in article_info.authors %}
-                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},&nbsp; {% endif %}
+                {{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %}{% endif %}
             {% endfor %}<br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
-            {% if article_info.has_path == True %}<b style="color: orange;">*Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
+            {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
             <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
             <div class="collapse" id="collapse-{{loop.index}}">
               <div class="card card-body">
