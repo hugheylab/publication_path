@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def send_email(receiver_email, message_text, subject, db):
-    acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com', 'ken.s.lau@vanderbilt.edu', 'tony.capra@ucsf.edu', 'tony.capra@vanderbilt.edu', 'colin.walsh@vanderbilt.edu', 'colin.walsh@vumc.org']
+    acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com', 'ken.s.lau@vanderbilt.edu', 'tony.capra@ucsf.edu', 'tony.capra@vanderbilt.edu', 'colin.walsh@vanderbilt.edu', 'colin.walsh@vumc.org', 'b.malin@vanderbilt.edu', 'c.lopez@vanderbilt.edu']
     if receiver_email in acceptEmail:
         cur = db.cursor()
         smtp_server = "smtp.gmail.com"
