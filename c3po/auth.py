@@ -206,6 +206,7 @@ def confirm():
         all_has_emails = (all_has_emails or has_emails)
         article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list, has_path)
         article_infos.append(article_info_tmp)
+        email_list.sort()
 
     error = None
     if request.method == 'POST':
