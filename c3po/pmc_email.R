@@ -149,20 +149,21 @@ if (file.exists(apiKeyFilename)) {
 
 # Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
-retry = TRUE
+fresh = FALSE
 
 con = connectDB()
 timingsDT = addTimings(timingsDT, 'Start query pmc id')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
+dtAll = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
 timingsDT = addTimings(timingsDT, 'End query pmc id')
-if (isTRUE(retry)) {
+if (!(isTRUE(fresh))) {
   dtFound = setDT(dbGetQuery(con, 'SELECT DISTINCT(pmc) FROM pmc_parse_status;'))
-  dt = dt[!(id_value %in% dtFound$pmc),]
+  dt = dtAll[!(id_value %in% dtFound$pmc),]
 } else {
   DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
   DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_parse_status;')
   DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
   DBI::dbCreateTable(con, 'pmc_parse_status', data.table(pmc = as.character(NA)))
+  dt = dtAll
 }
 
 dt[, hasFile := (id_value %in% fileDT$pmc)]
@@ -228,20 +229,29 @@ timingsDT = addTimings(timingsDT, 'Query doi')
 
 timingsDT = addTimings(timingsDT, 'Start modify data.table')
 dtNew = unique(dtNew)
-dtMerge = merge(dtNew, dt, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
+dtMerge = merge(dtNew, dtAll, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
 # set(dtMerge, j = 'id_value', value = NULL)
 dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
 
 dtMerge = dtMerge[, .(doi, email, pmc)]
 timingsDT = addTimings(timingsDT, 'End modify data.table')
 
+writeChunkSize = 2250000
+
+writeNumChunks = nrow(dtMerge) %/% writeChunkSize
+
+saveResults = foreach(i = 0:(writeNumChunks-1)) %do% {
+  startNum = (i * writeChunkSize) + 1
+  endNum = startNum + writeChunkSize - 1
+  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv')))
+  drop_upload(file.path(localDir, paste0('pmc_email', i,'.csv')), path = "Publication Path Files", dtoken = token)}
+
 fwrite(dtMerge, file.path(localDir, 'pmc_email.csv'))
 drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
 
 
 timingsDT = addTimings(timingsDT, 'Start insert data.table')
-dbExecute(con, 'DELETE FROM pmc_email;')
-dbWriteTable(con, 'pmc_email', dtMerge, append = TRUE)
+dbWriteTable(con, 'pmc_email', dtMerge, overwrite = TRUE)
 
 timingsDT = addTimings(timingsDT, 'End insert data.table')
 
