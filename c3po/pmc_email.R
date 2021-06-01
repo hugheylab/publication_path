@@ -171,6 +171,7 @@ dt[, hasFile := (id_value %in% fileDT$pmc)]
 chunkSize = 50
 
 numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
+# numChunks = 100
 
 dtNoFile = dt[hasFile == FALSE,]
 
@@ -214,7 +215,7 @@ entrezResults = foreach(i = 0:(numChunks-1)) %do% {
   
   con = connectDB()
   dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
-  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = articleIds), append = TRUE)
+  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = dtTmp$id_value), append = TRUE)
   # dt3
   dbDisconnect(con)
   
@@ -243,11 +244,11 @@ writeNumChunks = nrow(dtMerge) %/% writeChunkSize
 saveResults = foreach(i = 0:(writeNumChunks-1)) %do% {
   startNum = (i * writeChunkSize) + 1
   endNum = startNum + writeChunkSize - 1
-  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv')))
+  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv')), compress = 'gzip')
   drop_upload(file.path(localDir, paste0('pmc_email', i,'.csv')), path = "Publication Path Files", dtoken = token)}
 
 fwrite(dtMerge, file.path(localDir, 'pmc_email.csv'))
-drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
+# drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
 
 
 timingsDT = addTimings(timingsDT, 'Start insert data.table')
