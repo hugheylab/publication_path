@@ -23,12 +23,12 @@ if (isTRUE(delFromTable)) {
 #Try downloading then lapply to get data.table
 for (fileName in fileNames) {
   localPath = file.path(localDir, fileName)
-  drop_download(file.path(dropPath, fileName), localPath, dtoken = token)
+  drop_download(file.path(dropPath, fileName), localPath, dtoken = token, overwrite = TRUE)
   pmcDT = fread(localPath)
   
   con = connectDB()
   
-  dbWriteTable(con, pmcDT, 'pmc_email', append = TRUE)
+  dbWriteTable(con, 'pmc_email', pmcDT, append = TRUE)
   
   dbDisconnect(con)
 }

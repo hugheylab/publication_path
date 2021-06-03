@@ -198,7 +198,7 @@ fileResults = foreach(dtTmp = iterators::iter(dtFile, by = 'row')) %dopar% {
 timingsDT = addTimings(timingsDT, 'End loop over files')
 
 timingsDT = addTimings(timingsDT, 'Start loop over Entrez')
-entrezResults = foreach(i = 0:(numChunks-1)) %do% {
+entrezResults = foreach(i = 0:(numChunks)) %do% {
   startNum = (i * chunkSize) + 1
   endNum = startNum + chunkSize - 1
   dtTmp = dtNoFile[startNum:endNum,]
@@ -241,7 +241,7 @@ writeChunkSize = 2250000
 
 writeNumChunks = nrow(dtMerge) %/% writeChunkSize
 
-saveResults = foreach(i = 0:(writeNumChunks-1)) %do% {
+saveResults = foreach(i = 0:(writeNumChunks)) %do% {
   startNum = (i * writeChunkSize) + 1
   endNum = startNum + writeChunkSize - 1
   fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv')), compress = 'gzip')
