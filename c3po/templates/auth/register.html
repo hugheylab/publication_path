@@ -1,21 +1,18 @@
 {% extends 'base.html' %}
 
 {% block navbar %}
-  <p><b>Step 1: {% block title %}Search{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 2: Select articles and email addresses&nbsp;&nbsp;→&nbsp;&nbsp;
-  Step 3: Enter submission path</p>
+  <p><b>Step 1: {% block title %}Search/Select articles and email addresses{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Enter submission path</p>
 {% endblock %}
 
 {% block content %}
     <p>
-      Hello, and thank you for checking out C(3P)O! 
-      The purpose of this application is to allow authors to enter the submission path that their papers went through prior to publication. 
-      This information will be used to create a database of submission paths, available for anyone to use and analyze. 
-      The article information we have comes from pubmed (via <a target="_blank" href="https://doi.org/10.7717/peerj.11071">pmdb</a>) and pubmed central.
-      First, search for articles by email address(es) attached to the paper or DOI / pubmed IDs (PMID).
-      Second, select email address(es) for each article you wish to enter information for, and we will generate a unique URL to enter the submission path and send it to the selected address(es). 
-      Finally, use the link in the email to enter the submission path and (optionally) the date you first submitted to each journal. 
-      Thank you again for your participation! 
+      Hello, and thank you for checking out C(3P)O! This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
+      The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
+      Contributing involves two steps: <br/>
+      1. Identify articles on which you were the corresponding author. For each article, you will receive an email containing a special link. (The website links published articles with email addresses using data from PubMed and PubMed Central.) <br/>
+      2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/>
+      That’s it! Thank you again for participating! Please send any feedback to xxx.
       <br/><br/>
       *Please note that C(3P)O is currently in beta and is a work in progress.*
     </p>

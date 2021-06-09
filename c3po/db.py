@@ -66,7 +66,7 @@ def get_pg_authors_and_emails():
         "FROM pmdb_email ) "
         "delete from pmdb_email where id in (select id from email_rank where rank_number > 1);")
     query3 = (
-        "INSERT INTO email_doi(doi, email, source) (select doi, email, 'pmdb' as source "
+        "INSERT INTO email_doi(doi, email, source) (select doi, LOWER(email) as email, 'pmdb' as source "
         "from pmdb_email);")
     emStart = time.time()
     cur.execute(query)
