@@ -223,7 +223,7 @@ entrezResults = foreach(i = 0:(numChunks)) %do% {
 timingsDT = addTimings(timingsDT, 'End loop over Entrez')
 
 con = connectDB()
-dtNew = setDT(dbGetQuery(con, 'SELECT * FROM pmc_email_tmp;'))
+dtNew = setDT(dbGetQuery(con, 'SELECT LOWER(email) as email, pmc FROM pmc_email_tmp;'))
 
 dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
 timingsDT = addTimings(timingsDT, 'Query doi')
@@ -244,8 +244,8 @@ writeNumChunks = nrow(dtMerge) %/% writeChunkSize
 saveResults = foreach(i = 0:(writeNumChunks)) %do% {
   startNum = (i * writeChunkSize) + 1
   endNum = startNum + writeChunkSize - 1
-  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv')), compress = 'gzip')
-  drop_upload(file.path(localDir, paste0('pmc_email', i,'.csv')), path = "Publication Path Files", dtoken = token)}
+  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv.gz')))
+  drop_upload(file.path(localDir, paste0('pmc_email', i,'.csv.gz')), path = "Publication Path Files", dtoken = token)}
 
 fwrite(dtMerge, file.path(localDir, 'pmc_email.csv'))
 # drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
