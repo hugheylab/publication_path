@@ -52,7 +52,7 @@ def get_pg_authors_and_emails():
     db.commit()
     
     query = (
-        "INSERT INTO pmdb_email(doi, email, pmid) (select article_id.id_value as doi, unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z0-9_-]+)', 'g')) as email, author_affiliation.pmid as pmid "
+        "INSERT INTO pmdb_email(doi, email, pmid) (select article_id.id_value as doi, LOWER(unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z0-9_-]+)', 'g'))) as email, author_affiliation.pmid as pmid "
         "from author_affiliation as author_affiliation "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
         "where article_id.id_type = 'doi');")
@@ -66,7 +66,7 @@ def get_pg_authors_and_emails():
         "FROM pmdb_email ) "
         "delete from pmdb_email where id in (select id from email_rank where rank_number > 1);")
     query3 = (
-        "INSERT INTO email_doi(doi, email, source) (select doi, LOWER(email) as email, 'pmdb' as source "
+        "INSERT INTO email_doi(doi, email, source) (select doi, email as email, 'pmdb' as source "
         "from pmdb_email);")
     emStart = time.time()
     cur.execute(query)
