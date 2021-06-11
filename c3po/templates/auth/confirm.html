@@ -1,11 +1,25 @@
 {% extends 'base.html' %}
 
 {% block navbar %}
-<p><b>Step 1: {% block title %}Search/Select articles and email addresses{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+<p><b>Step 1: {% block title %}Identify articles and email addresses{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
   Step 2: Enter submission path</p>
 {% endblock %}
 
 {% block content %}
+  <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-welcome" aria-expanded="false" aria-controls="collapse-welcome">Goals / Outline</button>
+  <div class="collapse" id="collapse-welcome">
+    <div class="card card-body">
+      <b>Hello, and thank you for checking out C(3P)O!</b> <br/>
+      This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
+      The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
+      Contributing involves two steps: <br/>
+      1. Identify articles on which you were the corresponding author. For each article, you will receive an email containing a special link. (The website links published articles with email addresses using data from PubMed and PubMed Central.) <br/>
+      2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/>
+      That’s it! Thank you again for participating! Please send any feedback to hugheylab.publishing.pipeline@gmail.com
+      <br/><br/>
+      *Please note that C(3P)O is currently in beta and is a work in progress.*
+    </div>
+  </div><br/><br/>
   <form method="post">
     <table style="width:100%;border-spacing: 0px;">
       <tr>
@@ -13,10 +27,10 @@
           <!--<b>Article Information</b>-->
           <b>Instructions </b>
           <ul>
-            <li>Select the desired combination of articles and email addresses. These email addresses will be sent an email containing a unique URL to enter the submission path for each article they were selected with.</li>
+            <li>Select the desired combination of articles and email addresses. Each address will be sent a unique URL per artcile selected to enter the submission path.</li>
             <li>Click More information to show or hide author affiliations and article IDs.</li>
             <li>If necessary, click Back to return to the search page.</li>
-            <li>Click Confirm to send an email to the specified email address for each specified article. Each email will contain a unique URL to enter the article’s submission path.</li>
+            <li>Click Confirm to send an email to the specified email address for each specified article.</li>
           </ul>
         </td>
         <td style="width: 25%; border-bottom: 1px solid black; vertical-align: top;">
