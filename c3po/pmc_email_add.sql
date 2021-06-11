@@ -1,3 +1,4 @@
+DELETE FROM email_doi WHERE source = 'pmc';
 INSERT INTO email_doi(email, doi, source) 
     (SELECT DISTINCT email, doi, 'pmc' as source
     FROM pmc_email
