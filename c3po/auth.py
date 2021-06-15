@@ -258,7 +258,7 @@ def confirm():
                         <p>Hello,<br/> Here is your unique URL to enter the submission path for \"""" + article['title'] + """\":<br/>
                         """ + url_base + """/enter/""" + url_id + """<br/>
                         Thank you in advance!<br/>
-                        If you didn't request this email, please let us know at hugheylab.publishing.pipeline@gmail.com</p>
+                        If you didn't request this email, please let us know at hugheylab.publishing.pipeline@gmail.com.</p>
                     </body>
                 </html>
                 """

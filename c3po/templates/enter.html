@@ -4,7 +4,7 @@
 
 {% block navbar %}
   <p>Step 1: Identify articles and email addresses&nbsp;&nbsp;→&nbsp;&nbsp;
-  <b>Step 2: {% block title %}Enter{% endblock %} submission path</b></p>
+  <b>Step 2: {% block title %}Enter{% endblock %} submission path(s)</b></p>
 {% endblock %}
 
 {% block content %}
@@ -84,7 +84,7 @@ $(document).ready(function ()
   });
 });
 </script>
-<button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-welcome" aria-expanded="false" aria-controls="collapse-welcome">Goals / Outline</button>
+<button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-welcome" aria-expanded="false" aria-controls="collapse-welcome">Overview</button>
 <div class="collapse" id="collapse-welcome">
   <div class="card card-body">
     <b>Hello, and thank you for checking out C(3P)O!</b> <br/>
@@ -105,7 +105,7 @@ $(document).ready(function ()
     <ul>
       {% if confirm == False %}
         <li>Enter the submission steps in chronological order for the specified article.</li>
-        <li>Consider only the first submission to each journal, so ignoring any subsequent resubmissions.</li>
+        <li>Consider only the first submission to each journal, so ignoring any resubmissions.</li>
         <li>Search for and select the journal for each step from the dropdown menu.</li>
         <li>First submission dates are optional, but appreciated.</li>
         <li>Use the buttons to add, delete, and reorder steps as necessary.</li>
