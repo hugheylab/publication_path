@@ -17,6 +17,12 @@ CREATE TABLE IF NOT EXISTS email_address (
   active BOOLEAN NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS accept_email (
+  id SERIAL PRIMARY KEY,
+  email TEXT NOT NULL,
+  active BOOLEAN DEFAULT TRUE NOT NULL
+);
+
 CREATE TABLE author_doi (
   id SERIAL PRIMARY KEY,
   author_pos INTEGER,

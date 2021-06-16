@@ -1,10 +1,21 @@
 import smtplib, ssl
 from c3po.db import get_db
+from c3po.db import pg_query
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def send_email(receiver_email, message_text, subject, db):
-    acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com', 'ken.s.lau@vanderbilt.edu', 'tony.capra@ucsf.edu', 'tony.capra@vanderbilt.edu', 'colin.walsh@vanderbilt.edu', 'colin.walsh@vumc.org', 'b.malin@vanderbilt.edu', 'c.lopez@vanderbilt.edu']
+    cur = db.cursor()
+    cur.execute(
+        'SELECT * FROM accept_email WHERE active = TRUE', 
+    )
+    acceptEmailList = cur.fetchall()
+    cur.close()
+    acceptEmail = []
+    if acceptEmailList != None and len(acceptEmailList) > 0:
+        for acceptEmailTmp in acceptEmailList:
+            acceptEmail.append(acceptEmailTmp['email'])
+    # acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com']
     if receiver_email in acceptEmail:
         cur = db.cursor()
         smtp_server = "smtp.gmail.com"
