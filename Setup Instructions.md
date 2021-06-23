@@ -19,7 +19,7 @@
 4. In the newly created tmux session, set your working directory to the publication_path repository directory.
 5. Install required python libraries by running `pip install -r requirements.txt`
 6. Once the requirements are met, set up a virtual environment by running `python3 -m venv venv`
-7. Then, you can activate the virtual environment and set everything up to host the site on port 5000 using the commands in the `[setup.sh](http://setup.sh)` file:
+7. Then, you can activate the virtual environment and set everything up to host the site on port 5000 using the commands in the `setup.sh` file:
 
     ```bash
     . venv/bin/activate
