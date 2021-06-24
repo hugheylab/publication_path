@@ -65,7 +65,10 @@
     7. `chunkSize` Line 171: This variable determines how many pmc IDs to query the API for, since there are limits to the amount of data that can be returned. `50` is the default, and has been safe thus far without breaking any limits. Feel free to adjust if you wish to see if it will run faster in larger chunks and less API calls.
     8. `writeChunkSize1` Line 240: This variable determines the amount of rows written to each csv being uploaded to dropbox to avoid the file size limit. As above with `chunkSize`, the default has been safe thus far but feel free to adjust, especially if they ever expand the file size limit.
     9. `drop_upload()` Line 248: Specifically, the `path` argument. This is the path in your dropbox directory that the files will be uploaded to. By default it is set to `Publication Path Files` , but you may change it to whatever folder you wish, so long as it exists on your dropbox prior to calling the upload.
-7. Once adjustments have been made and you are comfortable with the environment you have everything in in H2, You can run the whole script file (on H2).
+7. Once adjustments have been made and you are comfortable with the environment you have everything in in H2, You can run the whole script file (on H2) using the following command:
+    ```bash
+    Rscript pmc_email.R
+    ```
 8. To see if there were any pmc IDs that failed for any reason, simply query the `pmc_parse_status` table on the database and compare that against the `dtAll` variable set on line 156. `pmc_parse_status` will show all pmc IDs (including those where no emails were found) that have been parsed.
 9. If you need to run again due to errors while processing, pmdb has been updated with new pmc IDs, or whatever reason, you can simply run the entire script again! To save time, it is highly recommended you set the `fresh` variable from step 6.6 to `FALSE` for incremental updates/ error handling.
 10. Once you have completed steps 1-9 and repeated as necessary, you can now use the `pmc_email_download.R` script on H1 to download the files from dropbox and insert into the DB for use with the site.
@@ -73,12 +76,20 @@
     1. Get the filenames of each chunk from dropbox.
     2. Download the files from dropbox.
     3. Insert the data from the files into an intermediary table.
-    4. Run a SQL script that partially re-initializes the database with emails from both pmdb and pmc.
 12. Again, you may have to modify some of the variables, so see some of those below:
     1. `token` Line 6: See 6.1.
     2. `connectDB()` Lines 9-10: See 6.2.
     3. `localDir` Line 12: See 6.3.
     4. `dropPath` Line 13: This is used to supply the `path` argument to the dropbox calls. See 6.9 for more information.
     5. `delFromTable` Line 15: This deletes all data from the `pmc_email` table on H1. Useful to reduce processing time by having potential duplicates, but not recommended to use if you are incrementally adding items.
-13. Before using the `pmc_email_download.R` script, be aware that this will partially re-initialize the database in the final line of the script. Because of that, **the site will need to be down for a while as the script finishes**. Leaving the site up not only diverts away processing power from the sql script running, it also will not have any emails on file until the final step completes. The last step (running the sql script) can take about 30 minutes to 2 hours.
-14. Once you have modified the script as necessary and are aware of the implications highlighted in step 13, you can run the script! If you wish to minimize site downtime as much as possible, I would recommend running the whole script except for the final line. Then, once that execution has finished, take down the site and run the final line. Once that final step has fully finished, bring the site back up!
+13. Once you have modified the script as necessary, you can run the script using the following command:
+    ```bash
+    Rscript pmc_email_download.R
+    ```
+14. The final step is to run the `pmc_email_add.sql` script to insert the data into pmdb and reformat/update all reference IDs.
+15. Before using the `pmc_email_add.sql` script, be aware that this will partially re-initialize the database. Because of that, **the site will need to be down for a while as the script runs**. Leaving the site up not only diverts away processing power from the sql script running, it also will not have any emails on file until the final step completes. This last step can take about 30 minutes to 2 hours.
+16. Once you have modified the script as necessary and are aware of the implications highlighted in step 14, you can run the script using the following command:
+    ```bash
+    psql pmdb -f c3po/pmc_email_add.sql
+    ```
+17. If you wish to minimize site downtime as much as possible, I would recommend running the whole script except for the final line. Then, once that execution has finished, take down the site and run the final line. Once that final step has fully finished, bring the site back up!

@@ -33,4 +33,4 @@ for (fileName in fileNames) {
   dbDisconnect(con)
 }
 
-system('psql pmdb -f c3po/pmc_email_add.sql')
+# system('psql pmdb -f c3po/pmc_email_add.sql')
