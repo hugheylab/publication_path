@@ -55,7 +55,7 @@
     6. Iterate over all pmc IDs that do not have a file and use the API to query for them, then parse any emails found.
     7. Break up the data into several chunks to save as separate csv files. This is done because rdrop2 has an upload size limit we want to avoid.
     8. Upload the csv files to dropbox using rdrop2.
-6. You will probably need to make adjustments in the `pmc_email.R` script for this to run how you want. I will highlight some variabled and functions that will be the most relevant here:
+6. You will probably need to make adjustments in the `pmc_email.R` script for this to run how you want. I will highlight some variables and functions that will be the most relevant here:
     1. `token` Line 15: This is the dropbox token object saved as an rds file to be used.
     2. `connectDB()` Lines 20-21: Here I just have a basic method that automatically connects to a database and returns a connection object. You might need to change the `dbname`, `host`, and/or `password` arguments as necessary to connect to your pmdb instance.
     3. `localDir` Line 120: This is the local directory on H2 that will be used to download all of the files then parse through. It is also where the output will be saved at the end.
