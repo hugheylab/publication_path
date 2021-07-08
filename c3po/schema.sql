@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS journal_name;
 DROP TABLE IF EXISTS timings;
 DROP TABLE IF EXISTS post;
 DROP TABLE IF EXISTS doi_child_tables;
+DROP TABLE IF EXISTS author_doi_tables;
 DROP TABLE IF EXISTS email_doi_tables;
 DROP TABLE IF EXISTS pmid_doi;
 DROP TABLE IF EXISTS pmdb_email;
@@ -59,6 +60,12 @@ CREATE TABLE doi_child_tables (
 
 CREATE TABLE email_doi_tables (
   email TEXT PRIMARY KEY,
+  dois TEXT[]
+);
+
+CREATE TABLE author_doi_tables (
+  author_hash TEXT PRIMARY KEY,
+  author_name TEXT,
   dois TEXT[]
 );
 

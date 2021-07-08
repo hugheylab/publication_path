@@ -79,6 +79,9 @@ def register():
         #         dois.append(pmid_doi['doi'])
         #     query_dois = str(dois).replace('[', '(').replace(']', ')')
         #     print(query_dois)
+        elif search_type == 'author':
+            author_val = doi_val
+            query_authors = query_val
         else:
             query_dois = query_val
             if 'doi.org' in doi_val:

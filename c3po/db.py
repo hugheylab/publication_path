@@ -132,13 +132,22 @@ def get_pg_article_info():
     cur.execute(query3)  # Query
 
     query4 = (
+        "insert into author_doi_tables(author_hash, author_name, dois) "
+	    "(select MD5(author_name) as author_hash, "
+        "author_name, "
+	 	"array_agg(doi) as dois "
+	    "from author_doi "
+	    "group by author_name);")
+    cur.execute(query4)  # Query
+
+    query5 = (
         "insert into pmid_doi(pmid, doi) "
 	    "(select pmid, "
 	 	"max(id_value) as doi "
 	    "from article_id "
 	    "where id_type = 'doi' "
 		"group by pmid);")
-    cur.execute(query4)  # Query
+    cur.execute(query5)  # Query
 
     db.commit()
     cur.close()
