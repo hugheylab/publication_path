@@ -80,6 +80,7 @@ CREATE TABLE If NOT EXISTS email_url (
   url_param_id TEXT UNIQUE NOT NULL,
   doi TEXT NOT NULL,
   revision INTEGER NOT NULL,
+  author_id INTEGER,
   completed_timestamp TIMESTAMP
 );
 

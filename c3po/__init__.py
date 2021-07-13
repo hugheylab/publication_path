@@ -30,6 +30,8 @@ def create_app(test_config=None):
 
     from . import auth
     app.register_blueprint(auth.bp)
+    from . import author
+    app.register_blueprint(author.bp)
     from . import enter
     app.register_blueprint(enter.bp)
     from . import thanks

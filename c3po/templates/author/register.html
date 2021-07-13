@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+  <p><b>Step 1: {% block title %}Identify articles and email addresses{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Enter submission path(s)</p>
+{% endblock %}
+
+{% block content %}
+    <p>
+      <b>Hello, and thank you for checking out C(3P)O!</b> <br/>
+      This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
+      The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
+      Contributing involves two steps: <br/><br/>
+      1. Identify articles on which you were the corresponding author. For each article, you will receive an email containing a special link. (The website links published articles with email addresses using data from PubMed and PubMed Central.) <br/><br/>
+      2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/><br/>
+      That’s it! Thank you again for participating! Please send any feedback to hugheylab.publishing.pipeline@gmail.com.
+      <br/><br/>
+      *Please note that C(3P)O is currently in beta and is a work in progress.*
+    </p>
+  <b>Instructions </b>
+  <ul>
+    <li>Select whether to search by email address or DOI / PMID.</li>
+    <li>Enter one or more search terms as a comma-separated list.</li>
+    <li>Click Search to search for matching articles and their associated emails.</li>
+  </ul>
+  <form method="post">
+    <!--Search Type<br/><br/>-->
+    <input type="radio" id="author" name="search_type" value="author"
+      {% if search_type == 'author' or search_type == Null %} checked {% endif %}>
+    <label for="author">Author Name</label>
+    <input type="radio" id="doi" name="search_type" value="doi"
+      {% if search_type == 'doi' %} checked {% endif %}>
+    <label for="doi">DOI / PMID</label>
+    <!--<select name="search_type" id="search_type">
+      <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI/ Pubmed ID</option>
+      <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>
+      <option {% if search_type == 'email' %} selected {% endif %} value="email">Email</option>
+    </select>--><br/><br/>
+    <!--Please enter search values separated by commas:<br/><br/>-->
+    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required >{{ doi }}</textarea><br/><br/>
+    <input class="btn btn-primary" type="submit" value="Search">
+  </form>
+{% endblock %}

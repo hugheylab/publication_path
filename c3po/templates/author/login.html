@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Log In{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <p>Found DOI: {{ doi }}, please confirm email address to continue.</p>
+  <form method="post">
+    <label for="email">email</label>
+    <input name="email" id="email" value="{{ email }}" required>
+    <input type="submit" value="Confirm Email">
+  </form>
+{% endblock %}

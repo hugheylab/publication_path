@@ -15,7 +15,7 @@ from c3po.db import pg_query
 from c3po.email_handler import send_email
 import hashlib
 
-bp = Blueprint('auth', __name__, url_prefix='/auth')
+bp = Blueprint('author', __name__, url_prefix='/author')
 
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
@@ -24,9 +24,9 @@ def register():
         url_doi = request.args.get('doi')
         email = request.args.get('email')
         if email != None and email != '':
-            return render_template('auth/register.html', doi = email, search_type = 'email')
+            return render_template('author/register.html', doi = email, search_type = 'email')
         elif url_doi != None and url_doi != '':
-            return render_template('auth/register.html', doi = url_doi, search_type = 'doi')
+            return render_template('author/register.html', doi = url_doi, search_type = 'doi')
 
     if request.method == 'POST':
         db = get_db()
@@ -52,7 +52,7 @@ def register():
             if emails == None or len(emails) == 0:
                 error = "No articles found associated to supplied email(s). Please check your search and try again."
                 flash(error)
-                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+                return render_template('author/register.html', doi = request.form['doi'], search_type = search_type)
             dois = []
             for email in emails:
                 print(email['dois'])
@@ -83,9 +83,25 @@ def register():
         #     print(query_dois)
         elif search_type == 'author':
             author_val = request.form['doi']
+            author_val = author_val.replace('\r\n', ' ')
+            author_val = author_val.replace('\n', ' ')
+            author_val = author_val.replace('\r', ' ')
+            author_val = author_val.replace('     ', ' ')
+            author_val = author_val.replace('    ', ' ')
+            author_val = author_val.replace('   ', ' ')
+            author_val = author_val.replace('  ', ' ')
+            query_val = hashlib.md5(author_val.encode('utf-8')).hexdigest()
 
             query_authors = query_val
             print('query_authors: ' + query_authors)
+
+            author = pg_query(db, 'fetchone', 'SELECT * FROM author_doi_tables WHERE author_hash = %s', (query_authors,))
+            if author == None or len(author) == 0:
+                error = "No articles found associated to supplied author. Please check your search and try again."
+                flash(error)
+                return render_template('author/register.html', doi = request.form['doi'], search_type = search_type)
+            print(author)
+            query_dois = str(author['dois']).replace('[', '(').replace(']', ')')
         else:
             query_dois = query_val
             if 'doi.org' in doi_val:
@@ -113,19 +129,19 @@ def register():
             if dois == '':
                 error = "No article(s) found with supplied DOI(s)/Pubmed ID(s). Please try searching again."
                 flash(error)
-                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+                return render_template('author/register.html', doi = request.form['doi'], search_type = search_type)
             query_dois = str(dois.split(',')).replace('[', '(').replace(']', ')')
 
         articles = pg_query(db, 'fetchall', 'SELECT * FROM article_info WHERE doi IN ' + query_dois,())
         if articles is None or len(articles) == 0:
             error = "No article(s) found with supplied DOI(s)/Pubmed ID(s). Please try searching again."
             flash(error)
-            return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+            return render_template('author/register.html', doi = request.form['doi'], search_type = search_type)
         db.close()
         doi_val = query_dois.replace('(', '').replace(')', '').replace('\'', '').replace(' ', '')
-        return redirect(url_for('auth.confirm', doi = doi_val, email = email_val))
+        return redirect(url_for('author.confirm', doi = doi_val, email = email_val))
     
-    return render_template('auth/register.html')
+    return render_template('author/register.html')
 
 @bp.route('/confirm', methods=('GET', 'POST'))
 def confirm():
@@ -135,7 +151,7 @@ def confirm():
     query_val = str(dois).replace('[', '(').replace(']', ')')
     email = request.args.get('email')
     if request.method == 'POST' and 'back' in request.form:
-        return redirect(url_for('auth.register', doi = url_doi, email = email))
+        return redirect(url_for('author.register', doi = url_doi, email = email))
     email_list = []
     if email != None and email != '':
         email_list = email.split(',')
@@ -287,7 +303,7 @@ def confirm():
         flash(error)
 
     db.close()
-    return render_template('auth/confirm.html', article_infos = article_infos, email_list = email_list, all_has_emails = all_has_emails)
+    return render_template('author/confirm.html', article_infos = article_infos, email_list = email_list, all_has_emails = all_has_emails)
 
 @bp.before_app_request
 def load_logged_in_user():
@@ -309,7 +325,7 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('author.login'))
 
         return view(**kwargs)
 
