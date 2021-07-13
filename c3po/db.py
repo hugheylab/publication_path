@@ -141,13 +141,19 @@ def get_pg_article_info():
     cur.execute(query4)  # Query
 
     query5 = (
+        "insert into author_list(author_name) "
+	    "(select distinct(author_name) as author_name "
+	 	"from author_doi;")
+    cur.execute(query5)  # Query
+
+    query6 = (
         "insert into pmid_doi(pmid, doi) "
 	    "(select pmid, "
 	 	"max(id_value) as doi "
 	    "from article_id "
 	    "where id_type = 'doi' "
 		"group by pmid);")
-    cur.execute(query5)  # Query
+    cur.execute(query6)  # Query
 
     db.commit()
     cur.close()
