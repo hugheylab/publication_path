@@ -53,7 +53,6 @@ def register():
             last_name = request.form['last_name']
             first_name = request.form['first_name']
             middle_name = request.form['middle_name']
-            author_val = request.form['doi']
             author_val = author_val.replace('\r\n', ' ')
             author_val = author_val.replace('\n', ' ')
             author_val = author_val.replace('\r', ' ')
@@ -68,11 +67,12 @@ def register():
             author_name_list_list = []
             # author_val will be in format {LN} {FN/FI} {(Optional)MI}
             if len(author_name_split) > 1:
-                # First Name + Last Name
-                author_query_names.append(author_name_split[1] + ' ' + author_name_split[0])
                 # First Initial + % + Last Name
                 if len(author_name_split[1]) == 1:
                     author_query_names.append(author_name_split[1][:1] + '% ' + author_name_split[0])
+                # First Name + Last Name
+                else:
+                    author_query_names.append(author_name_split[1] + ' ' + author_name_split[0])
                 if len(author_name_split) > 2:
                     # First Name + Middle Initial + % + Last Name
                     author_query_names.append(author_name_split[1] + ' ' + author_name_split[2] + '% ' + author_name_split[0])
