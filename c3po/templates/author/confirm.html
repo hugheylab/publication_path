@@ -43,6 +43,7 @@
             <button onclick="selectAuthor(this)" type="button" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="btn btn-link">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</button>
             <!--<input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>-->
             {% endfor %}<br/>
+            <button onclick="clearAuthor(this)" type="button" class="btn btn-danger" style="display: none;" name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear Author Selected</button><br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
             {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
             <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
@@ -70,6 +71,7 @@
       var doi = id_str.split('---')[0]
       var author_id = id_str.split('---')[1]
       document.getElementById(doi + '---link_author_sel').value = id_str
+      document.getElementById(doi + '---remove_link_author_sel').setAttribute('style', 'display: true')
       var elmnts = document.getElementsByClassName("btn btn-link");
       for (var i = 0; i < elmnts.length;i++) {
         var elmnt = elmnts[i]
@@ -84,6 +86,26 @@
           }
         }
       }
+    }
+    function clearAuthor(source) {
+      var id_str = source.getAttribute("name");
+      var doi = id_str.split('---')[0]
+      document.getElementById(doi + '---link_author_sel').value = ''
+      var elmnts = document.getElementsByClassName("btn btn-link");
+      for (var i = 0; i < elmnts.length;i++) {
+        var elmnt = elmnts[i]
+        console.log(i)
+        if (elmnt.getAttribute("type") == "button" && elmnt.getAttribute("name").includes("---")) {
+          console.log(elmnt.getAttribute("name"))
+          var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
+          var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
+          if (elmnt_doi == doi) {
+            console.log("not disabled")
+            elmnt.disabled = false
+          }
+        }
+      }
+      source.setAttribute('style', 'display: none')
     }
     function validateEmail(email) {
       const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
