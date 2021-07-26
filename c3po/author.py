@@ -245,7 +245,7 @@ def confirm():
         sentEmail = False
         email = request.form['email_address']
         for author in all_authors:
-            doi_form_str = author['doi'] + '---author_sel'
+            doi_form_str = author['doi'] + '---link_author_sel'
             doi_author_str = author['doi'] + '---' + str(author['id'])
             print(doi_form_str + ' found in form: ' + str(doi_form_str in request.form))
             if doi_form_str in request.form and request.form[doi_form_str] == doi_author_str:
@@ -292,7 +292,7 @@ def confirm():
             db.close()
             return redirect(url_for('thanks.thanks', thanks_type = 'registration'))
         else:
-            error = 'No emails selected, please select at least one email to send url to.'
+            error = 'No authors selected, please select at least one author to send url to.'
 
 
 

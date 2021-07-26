@@ -38,8 +38,10 @@
         <tr>
           <td style="width: 100%; border-bottom: 1px solid black;">
             <b>{{ article_info.article.title }}</b><br/>
+            <input type="hidden" name="{{article_info.article.doi + '---link_author_sel'}}" id="{{article_info.article.doi + '---link_author_sel'}}" />
             {% for author in article_info.authors %}
-              <input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>
+            <button onclick="selectAuthor(this)" type="button" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="btn btn-link">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</button>
+            <!--<input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>-->
             {% endfor %}<br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
             {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
@@ -62,14 +64,23 @@
     <br/><input name="back" class="btn btn-secondary" type="submit" value="Back">&nbsp;&nbsp;&nbsp;<input disabled="true" type="submit" id="confirm_button" class="btn btn-success" value="Confirm">
   </form>
   <script>
-    function selectAll(source) {
-      var email = source.getAttribute("name");
-      var elmnts = document.getElementsByTagName("input");
+    function selectAuthor(source) {
+      var id_str = source.getAttribute("name");
+      source.disabled = true
+      var doi = id_str.split('---')[0]
+      var author_id = id_str.split('---')[1]
+      document.getElementById(doi + '---link_author_sel').value = id_str
+      var elmnts = document.getElementsByClassName("btn btn-link");
       for (var i = 0; i < elmnts.length;i++) {
-        if (elmnts[i].getAttribute("type") == "checkbox" && elmnts[i].getAttribute("name").includes("---")) {
-          tmp_arr = elmnts[i].getAttribute("name").split("---");
-          if (email == tmp_arr[1]) {
-            elmnts[i].checked = source.checked;
+        var elmnt = elmnts[i]
+        console.log(i)
+        if (elmnt.getAttribute("type") == "button" && elmnt.getAttribute("name").includes("---")) {
+          console.log(elmnt.getAttribute("name"))
+          var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
+          var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
+          if (elmnt_doi == doi && elmnt_author_id != author_id) {
+            console.log("not disabled")
+            elmnt.disabled = false
           }
         }
       }
