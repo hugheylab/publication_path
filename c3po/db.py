@@ -38,7 +38,7 @@ def get_pg_authors_and_emails():
 
     # Perform a query.
     query = (
-        "INSERT INTO author_doi(author_pos, author_name, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name, author.collective_name) as author_name, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
+        "INSERT INTO author_doi(author_pos, author_name, collective, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name, author.collective_name) as author_name, (author.collective_name IS NOT NULL) as collective, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
         "from author as author "
         "left join author_affiliation as author_affiliation on "
         "author.pmid = author_affiliation.pmid and author.author_pos = author_affiliation.author_pos "
@@ -132,18 +132,19 @@ def get_pg_article_info():
     cur.execute(query3)  # Query
 
     query4 = (
-        "insert into author_doi_tables(author_hash, author_name, dois) "
-	    "(select MD5(author_name) as author_hash, "
-        "author_name, "
+        "insert into author_doi_tables(author_name, dois) "
+	    "(select author_name as author_name, "
 	 	"array_agg(doi) as dois "
 	    "from author_doi "
+	    "where NOT(collective) "
 	    "group by author_name);")
     cur.execute(query4)  # Query
 
     query5 = (
         "insert into author_list(author_name) "
-	    "(select distinct(author_name) as author_name "
-	 	"from author_doi;")
+	    "select distinct(author_name) as author_name "
+	 	"from author_doi "
+	    "where NOT(collective);")
     cur.execute(query5)  # Query
 
     query6 = (

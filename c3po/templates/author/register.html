@@ -22,6 +22,7 @@
     <li>Select whether to search by email address or DOI / PMID.</li>
     <li>Enter one or more search terms as a comma-separated list.</li>
     <li>Click Search to search for matching articles and their associated emails.</li>
+    <li><b>*If searching by author name, please enter the name in the following format: "{Last Name} {First Name/Initial} {Middle Initial}"</b></li>
   </ul>
   <form method="post">
     <!--Search Type<br/><br/>-->
@@ -38,6 +39,7 @@
     </select>--><br/><br/>
     <!--Please enter search values separated by commas:<br/><br/>-->
     <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" required >{{ doi }}</textarea><br/><br/>
+    <input name="last_name" id="last_name" placeholder="Last Name" value="{{ last_name }}" />&nbsp;&nbsp;<input name="first_name" id="first_name" placeholder="First Name/Initial" value="{{ first_name }}"/>&nbsp;&nbsp;<input name="middle_name" id="middle_name" placeholder="Middle Initial" value="{{ middle_name }}"/>
     <input class="btn btn-primary" type="submit" value="Search">
   </form>
 {% endblock %}

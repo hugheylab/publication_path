@@ -29,6 +29,7 @@ CREATE TABLE author_doi (
   id SERIAL PRIMARY KEY,
   author_pos INTEGER,
   author_name TEXT NOT NULL,
+  collective BOOLEAN NOT NULL,
   affiliation_pos INTEGER,
   author_affiliation TEXT,
   doi TEXT NOT NULL
@@ -65,8 +66,7 @@ CREATE TABLE email_doi_tables (
 );
 
 CREATE TABLE author_doi_tables (
-  author_hash TEXT PRIMARY KEY,
-  author_name TEXT,
+  author_name TEXT PRIMARY KEY,
   dois TEXT[]
 );
 
@@ -86,6 +86,7 @@ CREATE TABLE If NOT EXISTS email_url (
   doi TEXT NOT NULL,
   revision INTEGER NOT NULL,
   author_id INTEGER,
+  author_name TEXT,
   completed_timestamp TIMESTAMP
 );
 
