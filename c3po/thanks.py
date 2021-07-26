@@ -18,6 +18,6 @@ def thanks(thanks_type):
         text = 'Thank you for submitting your publication information!'
 
     if request.method == 'POST':
-        return redirect(url_for('auth.register'))
+        return redirect(url_for('author.register'))
 
     return render_template('thanks.html', text = text, thanks_type = thanks_type)
