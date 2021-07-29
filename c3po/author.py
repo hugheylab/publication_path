@@ -61,41 +61,33 @@ def register():
             author_val = author_val.replace('   ', ' ')
             author_val = author_val.replace('  ', ' ')
             author_name_split = [last_name, first_name]
-            if middle_name != None and middle_name != " ":
+            if middle_name != None and middle_name != " " and middle_name != "":
                 author_name_split.append(middle_name)
             author_query_names = []
             author_name_list_list = []
             # author_val will be in format {LN} {FN/FI} {(Optional)MI}
             if len(author_name_split) > 1:
-                # First Initial + % + Last Name
-                if len(author_name_split[1]) == 1:
-                    author_query_names.append(author_name_split[1][:1] + '% ' + author_name_split[0])
-                # First Name + Last Name
+                # FN/FI + % + LN
+                if len(author_name_split) == 2:
+                    query_name_search = 'SELECT * from author_doi_tables where author_last_name = \'' + author_name_split[0] + '\' and author_fore_name like \'' + author_name_split[1] + '%\';'
+                # MI
                 else:
-                    author_query_names.append(author_name_split[1] + ' ' + author_name_split[0])
-                if len(author_name_split) > 2:
-                    # First Name + Middle Initial + % + Last Name
-                    author_query_names.append(author_name_split[1] + ' ' + author_name_split[2] + '% ' + author_name_split[0])
-                    # First Initial + % + Middle Initial + % + Last Name
+                    # FI + % + MI + % + LN
                     if len(author_name_split[1]) == 1:
-                        author_query_names.append(author_name_split[1][:1] + '% ' + author_name_split[2] + '% ' + author_name_split[0])
+                        query_name_search = 'SELECT * from author_doi_tables where author_last_name = \'' + author_name_split[0] + '\' and author_fore_name like \'' + author_name_split[1] + '%\' and author_fore_name like \'% ' + author_name_split[2] + '%\';'
+                    # FN + MI + % + LN
+                    else:
+                        query_name_search = 'SELECT * from author_doi_tables where author_last_name = \'' + author_name_split[0] + '\' and author_fore_name like \'' + author_name_split[1] + ' ' + author_name_split[2] + '%\';'
             else:
-                author_query_names.append(' %' + author_val)
+                query_name_search = 'SELECT * from author_doi_tables where author_last_name = \'' + author_name_split[0] + '\';'
             
-            query_name_search = 'SELECT author_name from author_list where author_name = \'' + author_val + '\''
-            for aqn in author_query_names:
-                query_name_search = query_name_search + ' OR author_name ILIKE \'' + aqn + '\''
-            query_name_search = query_name_search + ';'
+            
             print('QUERY: ' + query_name_search)
             author_names = pg_query(db, 'fetchall', query_name_search)
             print(author_names)
             if len(author_names) > 0:
-                auth_names_found_query = 'SELECT * FROM author_doi_tables WHERE author_name = \'' + author_names[0]['author_name'] + '\''
-                for a_n in author_names[1:]:
-                    auth_names_found_query = auth_names_found_query + ' OR author_name = \'' + a_n['author_name'] + '\''
-                authors = pg_query(db, 'fetchall', auth_names_found_query + ';')
                 dois = []
-                for author in authors:
+                for author in author_names:
                     dois.extend(author['dois'])
                 query_dois = str(dois).replace('[', '(').replace(']', ')')
             else:

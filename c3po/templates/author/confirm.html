@@ -27,10 +27,11 @@
           <!--<b>Article Information</b>-->
           <b>Instructions </b>
           <ul>
-            <li>Select the desired combination of articles and email addresses. Each address will be sent a special link per article selected to enter the submission path.</li>
+            <li>For each article you wish to enter a path for, select which author you are. Only one author can be selected on each article..</li>
             <li>Click More information to show or hide author affiliations and article IDs.</li>
             <li>If necessary, click Back to return to the search page.</li>
-            <li>Click Confirm to send an email to the specified email address for each specified article.</li>
+            <li>Enter an email address that we can send the URLs to..</li>
+            <li>Click Confirm to send an email to the provided email address for each article with an author selected.</li>
           </ul>
         </td>
       </tr>
@@ -40,7 +41,7 @@
             <b>{{ article_info.article.title }}</b><br/>
             <input type="hidden" name="{{article_info.article.doi + '---link_author_sel'}}" id="{{article_info.article.doi + '---link_author_sel'}}" />
             {% for author in article_info.authors %}
-            <button onclick="selectAuthor(this)" type="button" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="btn btn-link">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</button>
+            <a onclick="selectAuthor(this)" href="#" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="link-dark">{{author.author['author_name']}}</a><sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}
             <!--<input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>-->
             {% endfor %}<br/>
             <button onclick="clearAuthor(this)" type="button" class="btn btn-danger" style="display: none;" name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear Author Selected</button><br/>
@@ -72,17 +73,19 @@
       var author_id = id_str.split('---')[1]
       document.getElementById(doi + '---link_author_sel').value = id_str
       document.getElementById(doi + '---remove_link_author_sel').setAttribute('style', 'display: true')
-      var elmnts = document.getElementsByClassName("btn btn-link");
+      source.setAttribute('class', 'link-primary')
+      var elmnts = document.getElementsByTagName("a");
       for (var i = 0; i < elmnts.length;i++) {
         var elmnt = elmnts[i]
         console.log(i)
-        if (elmnt.getAttribute("type") == "button" && elmnt.getAttribute("name").includes("---")) {
+        if (elmnt.getAttribute("name").includes("---")) {
           console.log(elmnt.getAttribute("name"))
           var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
           var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
           if (elmnt_doi == doi && elmnt_author_id != author_id) {
             console.log("not disabled")
             elmnt.disabled = false
+            elmnt.setAttribute('class', 'link-dark')
           }
         }
       }
@@ -91,17 +94,18 @@
       var id_str = source.getAttribute("name");
       var doi = id_str.split('---')[0]
       document.getElementById(doi + '---link_author_sel').value = ''
-      var elmnts = document.getElementsByClassName("btn btn-link");
+      var elmnts = document.getElementsByTagName('a');
       for (var i = 0; i < elmnts.length;i++) {
         var elmnt = elmnts[i]
         console.log(i)
-        if (elmnt.getAttribute("type") == "button" && elmnt.getAttribute("name").includes("---")) {
+        if (elmnt.getAttribute("name").includes("---")) {
           console.log(elmnt.getAttribute("name"))
           var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
           var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
           if (elmnt_doi == doi) {
             console.log("not disabled")
             elmnt.disabled = false
+            elmnt.setAttribute('class', 'link-dark')
           }
         }
       }

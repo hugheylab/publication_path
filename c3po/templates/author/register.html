@@ -26,10 +26,10 @@
   </ul>
   <form method="post">
     <!--Search Type<br/><br/>-->
-    <input type="radio" id="author" name="search_type" value="author"
+    <input type="radio" onchange="toggleDisplay(this)" id="author" name="search_type" value="author"
       {% if search_type == 'author' or search_type == Null %} checked {% endif %}>
     <label for="author">Author Name</label>
-    <input type="radio" id="doi" name="search_type" value="doi"
+    <input type="radio" onchange="toggleDisplay(this)" id="doi_radio" name="search_type" value="doi"
       {% if search_type == 'doi' %} checked {% endif %}>
     <label for="doi">DOI / PMID</label>
     <!--<select name="search_type" id="search_type">
@@ -38,8 +38,20 @@
       <option {% if search_type == 'email' %} selected {% endif %} value="email">Email</option>
     </select>--><br/><br/>
     <!--Please enter search values separated by commas:<br/><br/>-->
-    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" >{{ doi }}</textarea><br/><br/>
-    <input name="last_name" id="last_name" placeholder="Last Name" value="{{ last_name }}" />&nbsp;&nbsp;<input name="first_name" id="first_name" placeholder="First Name/Initial" value="{{ first_name }}"/>&nbsp;&nbsp;<input name="middle_name" id="middle_name" placeholder="Middle Initial" value="{{ middle_name }}"/>
-    <input class="btn btn-primary" type="submit" value="Search">
+    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" {% if search_type != 'doi' %} style="display:none" {% endif %} >{{ doi }}</textarea>
+    <div id="name_div" {% if search_type != 'author' %} style="display:none" {% endif %}><input name="last_name" id="last_name" placeholder="Last Name" value="{{ last_name }}" />&nbsp;&nbsp;<input name="first_name" id="first_name" placeholder="First Name/Initial" value="{{ first_name }}"/>&nbsp;&nbsp;<input name="middle_name" id="middle_name" placeholder="Middle Initial" value="{{ middle_name }}"/></div>
+    <br/><br/><input class="btn btn-primary" type="submit" value="Search">
   </form>
+  <script>
+    function toggleDisplay(source) {
+      var search_type = source.value;
+      if (search_type == 'author') {
+        document.getElementById('doi').setAttribute('style', 'display:none')
+        document.getElementById('name_div').setAttribute('style', '')
+      } else {
+        document.getElementById('doi').setAttribute('style', '')
+        document.getElementById('name_div').setAttribute('style', 'display:none')
+      }
+    }
+    </script>
 {% endblock %}

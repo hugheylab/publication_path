@@ -29,6 +29,8 @@ CREATE TABLE author_doi (
   id SERIAL PRIMARY KEY,
   author_pos INTEGER,
   author_name TEXT NOT NULL,
+  author_last_name TEXT,
+  author_fore_name TEXT,
   collective BOOLEAN NOT NULL,
   affiliation_pos INTEGER,
   author_affiliation TEXT,
@@ -66,13 +68,21 @@ CREATE TABLE email_doi_tables (
 );
 
 CREATE TABLE author_doi_tables (
-  author_name TEXT PRIMARY KEY,
+  author_last_name TEXT,
+  author_fore_name TEXT,
+  author_name TEXT,
   dois TEXT[]
 );
 
+CREATE INDEX author_index ON author_doi_tables (author_last_name, author_fore_name);
+
 CREATE TABLE author_list (
-  author_name TEXT PRIMARY KEY
+  author_last_name TEXT,
+  author_fore_name TEXT,
+  author_name TEXT
 );
+
+CREATE INDEX author_index2 ON author_list (author_last_name, author_fore_name);
 
 CREATE TABLE pmid_doi (
   pmid INTEGER PRIMARY KEY,

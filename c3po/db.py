@@ -38,7 +38,7 @@ def get_pg_authors_and_emails():
 
     # Perform a query.
     query = (
-        "INSERT INTO author_doi(author_pos, author_name, collective, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name, author.collective_name) as author_name, (author.collective_name IS NOT NULL) as collective, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
+        "INSERT INTO author_doi(author_pos, author_name, author_last_name, author_fore_name, collective, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name, author.collective_name) as author_name, author.last_name as author_last_name, author.fore_name as author_fore_name, (author.collective_name IS NOT NULL) as collective, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
         "from author as author "
         "left join author_affiliation as author_affiliation on "
         "author.pmid = author_affiliation.pmid and author.author_pos = author_affiliation.author_pos "
@@ -132,8 +132,10 @@ def get_pg_article_info():
     cur.execute(query3)  # Query
 
     query4 = (
-        "insert into author_doi_tables(author_name, dois) "
+        "insert into author_doi_tables(author_name, author_last_name, author_fore_name, dois) "
 	    "(select author_name as author_name, "
+        "max(author_last_name) as author_last_name, "
+        "max(author_fore_name) as author_fore_name, "
 	 	"array_agg(doi) as dois "
 	    "from author_doi "
 	    "where NOT(collective) "
