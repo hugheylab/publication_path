@@ -32,14 +32,17 @@
     <input type="radio" onchange="toggleDisplay(this)" id="doi_radio" name="search_type" value="doi"
       {% if search_type == 'doi' %} checked {% endif %}>
     <label for="doi">DOI / PMID</label>
+    <input type="radio" onchange="toggleDisplay(this)" id="email_radio" name="search_type" value="email"
+      {% if search_type == 'email' %} checked {% endif %}>
+    <label for="email">Email</label>
     <!--<select name="search_type" id="search_type">
       <option {% if search_type == 'doi' %} selected {% endif %} value="doi">DOI/ Pubmed ID</option>
       <option {% if search_type == 'pmid' %} selected {% endif %} value="pmid">Pubmed ID</option>
       <option {% if search_type == 'email' %} selected {% endif %} value="email">Email</option>
     </select>--><br/><br/>
     <!--Please enter search values separated by commas:<br/><br/>-->
-    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" {% if search_type != 'doi' %} style="display:none" {% endif %} >{{ doi }}</textarea>
-    <div id="name_div" {% if search_type != 'author' %} style="display:none" {% endif %}><input name="last_name" id="last_name" placeholder="Last Name" value="{{ last_name }}" />&nbsp;&nbsp;<input name="first_name" id="first_name" placeholder="First Name/Initial" value="{{ first_name }}"/>&nbsp;&nbsp;<input name="middle_name" id="middle_name" placeholder="Middle Initial" value="{{ middle_name }}"/></div>
+    <textarea name="doi" autofocus="TRUE" id="doi" rows="4" cols="75" {% if search_type != 'doi' and search_type != 'email' %} style="display:none" {% else %} required {% endif %} >{{ doi }}</textarea>
+    <div id="name_div" {% if search_type != 'author' and search_type != Null %} style="display:none" {% endif %}><input {% if search_type == 'author' or search_type == Null %} required {% endif %} name="last_name" id="last_name" placeholder="Last Name" value="{{ last_name }}" />&nbsp;&nbsp;<input {% if search_type == 'author' or search_type == Null %} required {% endif %} name="first_name" id="first_name" placeholder="First Name/Initial" value="{{ first_name }}"/>&nbsp;&nbsp;<input name="middle_name" id="middle_name" placeholder="Middle Initial" value="{{ middle_name }}"/></div>
     <br/><br/><input class="btn btn-primary" type="submit" value="Search">
   </form>
   <script>
@@ -47,10 +50,16 @@
       var search_type = source.value;
       if (search_type == 'author') {
         document.getElementById('doi').setAttribute('style', 'display:none')
+        document.getElementById('doi').required = false
         document.getElementById('name_div').setAttribute('style', '')
+        document.getElementById('last_name').required = true
+        document.getElementById('first_name').required = true
       } else {
         document.getElementById('doi').setAttribute('style', '')
+        document.getElementById('doi').required = true
         document.getElementById('name_div').setAttribute('style', 'display:none')
+        document.getElementById('last_name').required = false
+        document.getElementById('first_name').required = false
       }
     }
     </script>

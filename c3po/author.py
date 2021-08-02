@@ -22,15 +22,25 @@ def register():
 
     if request.method == 'GET':
         url_doi = request.args.get('doi')
-        url_last_name = request.args.get('last_name')
-        url_first_name = request.args.get('first_name')
-        url_middle_name = request.args.get('middle_name')
-        email = request.args.get('email')
-        if url_last_name != None and url_last_name != '' and url_first_name != None and url_first_name != '':
+        url_author_name = request.args.get('author')
+        url_email = request.args.get('email')
+        if url_author_name != None and url_author_name != '':
+            url_last_name = ''
+            url_first_name = ''
+            url_middle_name = ''
+            url_names = url_author_name.split(' ')
+            url_first_name = url_names[0]
+            if len(url_names) == 2:
+                url_last_name = url_names[1]
+            else:
+                url_middle_name = url_names[1]
+                url_last_name = url_names[2]
             if url_middle_name != None and url_middle_name != '':
                 return render_template('author/register.html', last_name = url_last_name, first_name = url_first_name, middle_name = url_middle_name, search_type = 'author')
             else:
                 return render_template('author/register.html', last_name = url_last_name, first_name = url_first_name, search_type = 'author')
+        elif url_email != None and url_email != '':
+            return render_template('author/register.html', doi = url_email, search_type = 'email')
         elif url_doi != None and url_doi != '':
             return render_template('author/register.html', doi = url_doi, search_type = 'doi')
 
@@ -61,8 +71,11 @@ def register():
             author_val = author_val.replace('   ', ' ')
             author_val = author_val.replace('  ', ' ')
             author_name_split = [last_name, first_name]
+            author_val = first_name
             if middle_name != None and middle_name != " " and middle_name != "":
                 author_name_split.append(middle_name)
+                author_val = author_val + ' ' + middle_name
+            author_val = author_val + ' ' + last_name
             author_query_names = []
             author_name_list_list = []
             # author_val will be in format {LN} {FN/FI} {(Optional)MI}
@@ -94,7 +107,23 @@ def register():
                 error = "No article(s) found with supplied author name. Please try searching again."
                 flash(error)
                 return render_template('author/register.html', last_name = request.form['last_name'], first_name = request.form['first_name'], middle_name = request.form['middle_name'], search_type = search_type)
-            
+        elif search_type == 'email':
+            email_val = doi_val
+            query_emails = query_val
+            print('query_emails: ' + query_emails)
+
+            emails = pg_query(db, 'fetchall', 'SELECT * FROM email_doi_tables WHERE email IN ' + query_emails,())
+            if emails == None or len(emails) == 0:
+                error = "No articles found associated to supplied email(s). Please check your search and try again."
+                flash(error)
+                return render_template('auth/register.html', doi = request.form['doi'], search_type = search_type)
+            dois = []
+            for email in emails:
+                print(email['dois'])
+                for doi_tmp in email['dois']:
+                    dois.append(doi_tmp)
+            query_dois = str(dois).replace('[', '(').replace(']', ')')
+            print(query_dois)
         else:
             query_dois = query_val
             if 'doi.org' in doi_val:
@@ -132,7 +161,7 @@ def register():
             return render_template('author/register.html', doi = request.form['doi'], search_type = search_type)
         db.close()
         doi_val = query_dois.replace('(', '').replace(')', '').replace('\'', '').replace(' ', '')
-        return redirect(url_for('author.confirm', doi = doi_val, email = email_val))
+        return redirect(url_for('author.confirm', doi = doi_val, email = email_val, author = author_val))
     
     return render_template('author/register.html')
 
@@ -143,8 +172,9 @@ def confirm():
     dois = url_doi.split(',')
     query_val = str(dois).replace('[', '(').replace(']', ')')
     email = request.args.get('email')
+    author = request.args.get('author')
     if request.method == 'POST' and 'back' in request.form:
-        return redirect(url_for('author.register', doi = url_doi, email = email))
+        return redirect(url_for('author.register', doi = url_doi, email = email, author = author))
     email_list = []
     if email != None and email != '':
         email_list = email.split(',')
