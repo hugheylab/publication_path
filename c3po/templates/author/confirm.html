@@ -13,7 +13,7 @@
       This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
       The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
       Contributing involves two steps: <br/>
-      1. Identify articles on which you were the corresponding author. For each article, you will receive an email containing a special link. (The website links published articles with email addresses using data from PubMed and PubMed Central.) <br/>
+      1. Identify articles on which you were an author. For each article, you will receive an email containing a special link. (The website links published articles with email addresses using data from PubMed and PubMed Central.) <br/>
       2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/>
       That’s it! Thank you again for participating! Please send any feedback to hugheylab.publishing.pipeline@gmail.com
       <br/><br/>
@@ -27,11 +27,10 @@
           <!--<b>Article Information</b>-->
           <b>Instructions </b>
           <ul>
-            <li>For each article you wish to enter a path for, select which author you are. Only one author can be selected on each article..</li>
+            <li>If necessary, click Back to go to the previous screen and modify your search.</li>
+            <li>Select a single author on each article that you wish to enter information for.</li>
             <li>Click More information to show or hide author affiliations and article IDs.</li>
-            <li>If necessary, click Back to return to the search page.</li>
-            <li>Enter an email address that we can send the URLs to..</li>
-            <li>Click Confirm to send an email to the provided email address for each article with an author selected.</li>
+            <li>Click Confirm to send an email to the email address you provide for each selected author.</li>
           </ul>
         </td>
       </tr>
@@ -44,7 +43,7 @@
             <a onclick="selectAuthor(this)" href="#" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="link-dark p-1">{{author.author['author_name']}}</a><sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}
             <!--<input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>-->
             {% endfor %}<br/>
-            <button onclick="clearAuthor(this)" type="button" class="btn btn-danger" disabled name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear Author Selected</button><br/><br/>
+            <button onclick="clearAuthor(this)" type="button" class="btn btn-danger" disabled name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear selected author</button><br/><br/>
             {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
             {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
             <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
