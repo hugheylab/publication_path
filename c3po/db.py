@@ -134,8 +134,8 @@ def get_pg_article_info():
     query4 = (
         "insert into author_doi_tables(author_name, author_last_name, author_fore_name, dois) "
 	    "(select author_name as author_name, "
-        "max(author_last_name) as author_last_name, "
-        "max(author_fore_name) as author_fore_name, "
+        "max(lower(author_last_name)) as author_last_name, "
+        "max(lower(author_fore_name)) as author_fore_name, "
 	 	"array_agg(doi) as dois "
 	    "from author_doi "
 	    "where NOT(collective) "

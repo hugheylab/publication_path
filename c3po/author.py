@@ -70,10 +70,10 @@ def register():
             author_val = author_val.replace('    ', ' ')
             author_val = author_val.replace('   ', ' ')
             author_val = author_val.replace('  ', ' ')
-            author_name_split = [last_name, first_name]
+            author_name_split = [last_name.lower(), first_name.lower()]
             author_val = first_name
             if middle_name != None and middle_name != " " and middle_name != "":
-                author_name_split.append(middle_name)
+                author_name_split.append(middle_name.lower())
                 author_val = author_val + ' ' + middle_name
             author_val = author_val + ' ' + last_name
             author_query_names = []
