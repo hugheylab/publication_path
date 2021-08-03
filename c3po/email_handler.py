@@ -5,17 +5,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 def send_email(receiver_email, message_text, subject, db):
-    cur = db.cursor()
-    cur.execute(
-        'SELECT * FROM accept_email WHERE active = TRUE', 
-    )
-    acceptEmailList = cur.fetchall()
-    cur.close()
-    acceptEmail = []
-    if acceptEmailList != None and len(acceptEmailList) > 0:
-        for acceptEmailTmp in acceptEmailList:
-            acceptEmail.append(acceptEmailTmp['email'])
-    # acceptEmail = ['jakejhughey@gmail.com', 'josh.schoenbachler@gmail.com']
+    # Uncomment below lines to re-add whitelisting emails
+    # cur = db.cursor()
+    # cur.execute(
+    #     'SELECT * FROM accept_email WHERE active = TRUE', 
+    # )
+    # acceptEmailList = cur.fetchall()
+    # cur.close()
+    # acceptEmail = []
+    # if acceptEmailList != None and len(acceptEmailList) > 0:
+    #     for acceptEmailTmp in acceptEmailList:
+    #         acceptEmail.append(acceptEmailTmp['email'])
+    acceptEmail = [receiver_email]
     if receiver_email in acceptEmail:
         cur = db.cursor()
         smtp_server = "smtp.gmail.com"
