@@ -5,14 +5,138 @@ library('xml2')
 library('RPostgres')
 library('DBI')
 library('foreach')
+library('doParallel')
+library('RCurl')
+library('glue')
+library('stringr')
+library('rdrop2')
+options(timeout = 3600)
+registerDoParallel()
+token = readRDS('tokens/token.rds')
 
-# get PMCID from pmdb
 
-con = dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost')
-dt = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC limit 10000;'))
-dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
-dtEmails = setDT(DBI::dbGetQuery(con, 'SELECT email_doi.email, email_doi.doi, article_info.pmid FROM email_doi as email_doi LEFT JOIN article_info as article_info ON email_doi.doi = article_info.doi;'))
-dtEmails = dtEmails[, pmid := as.integer(pmid)]
+
+#Connect to DB
+connectDB = function() {
+  return(dbConnect(RPostgres::Postgres(), dbname = 'pmdb', host = 'localhost', password = 'password'))}
+
+# Returns data.table of existing pmc_email table
+getExisting = function() {
+  con = connectDB()
+  dt = setDT(dbGetQuery(con, 'SELECT * FROM pmc_email;'))
+  dbDisconnect(con)
+  return(dt)}
+
+
+# Replace the two below with the pmparser version
+getRemoteFilenames = function(url, pattern) {
+  raw = RCurl::getURL(url)
+  x = strsplit(raw, '\\n')[[1L]]
+  m = regexpr(glue('{pattern}$'), x)
+  filenames = regmatches(x, m)
+  d = data.table(
+    tar_filename = filenames)
+  d = d[, download_url := paste0(url, tar_filename)]
+  return(d)}
+
+download = function(url, destfile, n = 3L) {
+  i = 1L
+  x = 1L
+  while (i <= n && !identical(x, 0L)) {
+    x = tryCatch({utils::download.file(url, destfile)}, error = function(e) e)
+    if (!identical(x, 0L)) Sys.sleep(stats::runif(1L, 1, 2))
+    i = i + 1L}
+  
+  if (inherits(x, 'error')) stop(x)
+  if (x != 0L) stop(glue('Download of {url} failed {n} times. Ruh-roh.'))
+  x}
+
+getRemoteFiles = function(localDir, url, pattern) {
+  if (!dir.exists(localDir)) {
+    dir.create(localDir)
+  }
+  fNames = getRemoteFilenames(url, pattern)
+  fNames[, tar_path := file.path(localDir, tar_filename)]
+  setwd(localDir)
+  r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
+    download(f$download_url, f$tar_filename)
+    # untar(f$tar_filename)
+  }
+  setwd('../')
+  # fileDT = data.table(file_paths = list.files(localDir, recursive = TRUE))
+  # fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.)')]
+  return(fNames)
+}
+
+untarFiles = function(fNames, localDir) {
+  setwd(localDir)
+  r = foreach(f = iterators::iter(fNames, by = 'row'), .combine = c) %dopar% {
+    untar(f$tar_filename, exdir = paste0('./', str_replace(f$tar_filename, '.xml.tar.gz', '')))
+  }
+  setwd('../')
+  return(getFilesDT(localDir))
+}
+
+getFilesDT = function(localDir) {
+  fList = list.files(localDir, recursive = TRUE)
+  fileDT = data.table(file_paths = fList)
+  fileDT[, pmc := str_extract(file_paths, '[ \\w-]+?(?=\\.nxml)')]
+  fileDT = fileDT[!(grepl('comm_use', pmc)),]
+  return(fileDT)
+}
+
+addTimings = function(timingsDT, stepName) {
+  elapsed = proc.time()[['elapsed']]
+  timingsDT = rbind(timingsDT, data.table(step = stepName, elapsed = elapsed))
+}
+
+dtFromXml = function(articleIds, articles, xpath, entrez = TRUE) {
+  # if (isTRUE(entrez)) {
+  nodes = xml_find_all(articles, xpath, flatten = FALSE)
+  texts = lapply(nodes, xml_text)
+  if (length(texts) == 0) return(data.table(pmc = as.character(NA), email = as.character(NA))) 
+  
+  dt1 = data.table(pmc = articleIds, email = texts)
+  if (nrow(dt1) > 0)dt1 = dt1[, .(email = unlist(email)), by = pmc]
+  
+  # } else {
+  
+  # }
+}
+
+getXmlFromEntrez = function(pmcIds, apiKey) {
+  if (is.na(apiKey)) {
+    a1 = entrez_fetch(db = 'pmc', id = pmcIds, rettype = 'xml')
+  } else {
+    a1 = entrez_fetch(db = 'pmc', id = pmcIds, rettype = 'xml', api_key = apiKey)
+  }
+  return(a1)
+}
+timingsDT = data.table(step = as.character(), elapsed = as.numeric())
+timingsDT = addTimings(timingsDT, 'Start')
+
+url = 'ftp.ncbi.nlm.nih.gov/pub/pmc/oa_bulk/'
+pattern = '(?:non_|)comm_use.*\\.xml\\.tar\\.gz'
+localDir = 'pmc_files'
+
+filesExist = TRUE
+fileDTFilename = file.path(localDir, 'fileDT.csv')
+
+if (isFALSE(filesExist)) {
+  timingsDT = addTimings(timingsDT, 'Start download and tar files')
+  fNames = getRemoteFiles(localDir, url, pattern)
+  fileDT = untarFiles(fNames, localDir)
+  timingsDT = addTimings(timingsDT, 'End download and untar files')
+} else {
+  timingsDT = addTimings(timingsDT, 'Start list files')
+  if(file.exists(fileDTFilename)) {
+    fileDT = fread(fileDTFilename)
+  } else {
+    fileDT = getFilesDT(localDir)
+    fwrite(fileDT, fileDTFilename)
+  }
+  timingsDT = addTimings(timingsDT, 'End list files')
+}
 
 apiKeyFilename = 'c3po/api_key.csv'
 
@@ -23,116 +147,121 @@ if (file.exists(apiKeyFilename)) {
   apiKey = dtAPI$api_key
 }
 
-# FEEDBACK
-# Turn certain bits into functions to reduce redundancy
-# Have complete accounting of PMC to DOI (maybe another table) then join later to ensure no duplicates. Useful to know all email adress combos.
-# Look into iterators package iter function to go by chunks by chunk size. Could also use split function with chunk size and iterate over that.
-# Use merge instead of merge.data.table.
+# Once you have all files and folders downloaded, make a data.table of file paths using file.list 
 
+fresh = FALSE
 
+con = connectDB()
+timingsDT = addTimings(timingsDT, 'Start query pmc id')
+dtAll = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'pmc\' ORDER BY pmid DESC;'))
+timingsDT = addTimings(timingsDT, 'End query pmc id')
+if (!(isTRUE(fresh))) {
+  dtFound = setDT(dbGetQuery(con, 'SELECT DISTINCT(pmc) FROM pmc_parse_status;'))
+  dt = dtAll[!(id_value %in% dtFound$pmc),]
+} else {
+  DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_email_tmp;')
+  DBI::dbExecute(con, 'DROP TABLE IF EXISTS pmc_parse_status;')
+  DBI::dbCreateTable(con, 'pmc_email_tmp', data.table(email = as.character(NA), pmc = as.character(NA)))
+  DBI::dbCreateTable(con, 'pmc_parse_status', data.table(pmc = as.character(NA)))
+  dt = dtAll
+}
+
+dt[, hasFile := (id_value %in% fileDT$pmc)]
 
 chunkSize = 50
 
-numChunks = nrow(dt) %/% chunkSize
+numChunks = nrow(dt[hasFile == FALSE,]) %/% chunkSize
+# numChunks = 100
 
-dtNew = foreach(i = 0:(numChunks-1), .combine = rbind) %do% {
+dtNoFile = dt[hasFile == FALSE,]
+
+dtFile = merge(dt, fileDT, by.x = 'id_value', by.y = 'pmc')
+dbDisconnect(con)
+
+timingsDT = addTimings(timingsDT, 'Start loop over files')
+tick = 0
+fileResults = foreach(dtTmp = iterators::iter(dtFile, by = 'row')) %dopar% {
+  tick = tick + 1
+  # fileDTFil = fileDT[pmc == dtTmp$id_value,]
+  articles = read_xml(file.path(localDir, dtTmp$file_paths))
+  articleIds = dtTmp$id_value
+  
+  dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
+  dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
+  dt3 = rbind(dt1, dt2)
+  con = connectDB()
+  dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = articleIds), append = TRUE)
+  # dt3
+  dbDisconnect(con)
+}
+timingsDT = addTimings(timingsDT, 'End loop over files')
+
+timingsDT = addTimings(timingsDT, 'Start loop over Entrez')
+entrezResults = foreach(i = 0:(numChunks)) %do% {
   startNum = (i * chunkSize) + 1
   endNum = startNum + chunkSize - 1
-  dtTmp = dt[startNum:endNum,]
-  if (is.na(apiKey)) {
-    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml')
-  } else {
-    a1 = entrez_fetch(db = 'pmc', id = dtTmp$id_value, rettype = 'xml', api_key = apiKey)
-  }
-  a2 = read_xml(a1)
-  # write_xml(a2, paste0(i, 'chunk_', chunkSize, 'chunkSize_entrez.xml'))
+  dtTmp = dtNoFile[startNum:endNum,]
+  a2 = read_xml(getXmlFromEntrez(dtTmp$id_value, apiKey))
   articles = xml_find_all(a2, './/article')
   articleIds = xml_text(xml_find_all(articles, './/article-id[@pub-id-type=\'pmc\']'))
   if (length(articleIds) < length(articles) ) print(i)
   
-  texts1 = xml_text(xml_find_all(xml_find_all(articles, './/author-notes'), './/email'))
-  texts2 = xml_find_all(articles, './/author-notes//email', flatten = FALSE)
-  texts3 = lapply(texts2, xml_text)
+  dt1 = dtFromXml(articleIds, articles, './/author-notes//email')
+  dt2 = dtFromXml(articleIds, articles, './/contrib[@contrib-type=\'author\']//email')
   
-  texts4 = xml_find_all(articles, './/contrib[@contrib-type=\'author\']//email', flatten = FALSE)
-  texts5 = lapply(texts4, xml_text)
+  dt3 = rbind(dt1, dt2)
+  dt3[, pmc := paste0('PMC', pmc)]
   
-  dt1 = data.table(pmc = articleIds, email = texts3)
-  dt1 = dt1[, .(email = unlist(email)), by = pmc]
-  dt2 = data.table(pmc = articleIds, email = texts5)
-  dt2 = dt2[, .(email = unlist(email)), by = pmc]
+  con = connectDB()
+  dbWriteTable(con, 'pmc_email_tmp', dt3, append = TRUE)
+  dbWriteTable(con, 'pmc_parse_status', data.table(pmc = dtTmp$id_value), append = TRUE)
+  # dt3
+  dbDisconnect(con)
   
-  rbind(dt1, dt2)
-  
-  
-  
-  # dtFound = data.table(pmcid = as.character(NA), email = as.character(NA))
-  # for(article in articles){
-  #   pmcid = ''
-  #   for (id in xml_find_all(article, './/article-id')) {
-  #     if (xml_attrs(id)[['pub-id-type']] == 'pmid') pmcid = paste0('PMC', xml_text(id))
-  #   }
-  #   a3 = xml_text(xml_find_all(xml_find_first(article, './/author-notes'), './/email'))
-  #   d = data.table(pmcid = pmcid,
-  #                  email = a3)
-  #   d = d[!is.na(email)]
-  #   a4 = xml_find_all(article, './/contrib')
-  #   d2 = data.table(pmcid = pmcid,
-  #                  contrib_type = xml_attr(a4, 'contrib-type'),
-  #                  email = xml_text(xml_find_first(a4, './/email')))
-  #   d2 = d2[contrib_type == 'author' & !is.na(email)]
-  #   d2[, contrib_type := NULL]
-  #   dtFound = rbind(dtFound, d, d2)
-  # }
-  # dtFound
 }
+timingsDT = addTimings(timingsDT, 'End loop over Entrez')
 
-dtNew[, pmc := paste0('PMC', pmc)]
-dtNew[, id_value := pmc]
-dtMerge = merge.data.table(dtNew, dt, by = 'id_value')
-dtMerge = dtMerge[, id_value := NULL]
-dtMerge = merge.data.table(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
-dtMerge = dtMerge[!dtEmails, on=.(pmid, email)]
-dtMerge = dtMerge[, .(doi, email)]
+con = connectDB()
+dtNew = setDT(dbGetQuery(con, 'SELECT LOWER(email) as email, pmc FROM pmc_email_tmp;'))
 
-dbWriteTable(con, 'email_doi', dtMerge, append = TRUE)
+dtDOI = setDT(DBI::dbGetQuery(con, 'SELECT * FROM article_id WHERE id_type = \'doi\';'))
+timingsDT = addTimings(timingsDT, 'Query doi')
 
-queryDrop1 = 'DROP TABLE IF EXISTS doi_child_tables;'
-queryDrop2 = 'DROP TABLE IF EXISTS email_doi_tables;'
+timingsDT = addTimings(timingsDT, 'Start modify data.table')
+dtNew = unique(dtNew)
+dtMerge = merge(dtNew, dtAll, by.x = 'pmc', by.y = 'id_value', sort = FALSE)
+# set(dtMerge, j = 'id_value', value = NULL)
+dtMerge = merge(dtMerge, dtDOI, by = 'pmid')[, doi := id_value]
 
-dbExecute(con, queryDrop1)
-dbExecute(con, queryDrop2)
+dtMerge = dtMerge[, .(doi, email, pmc)]
+timingsDT = addTimings(timingsDT, 'End modify data.table')
 
-queryCreate1 = 'CREATE TABLE doi_child_tables ( \
-                doi TEXT PRIMARY KEY, \
-                email_ids INTEGER[], \
-                author_ids INTEGER[] \
-              );'
-queryCreate2 = 'CREATE TABLE email_doi_tables ( \
-                email TEXT PRIMARY KEY, \
-                dois TEXT[] \
-              );'
+writeChunkSize = 2250000
 
-dbExecute(con, queryCreate1)
-dbExecute(con, queryCreate2)
+writeNumChunks = nrow(dtMerge) %/% writeChunkSize
 
-queryInsert1 = 'insert into doi_child_tables(doi, email_ids, author_ids) \
-        	    (select article_info.doi, \
-        	 	  array_remove(array_agg(distinct(email_doi.id)), NULL) as email_ids, \
-        	    array_agg(distinct(author_doi.id)) as author_ids \
-        	    from article_info \
-        	    left join email_doi on article_info.doi = email_doi.doi \
-        	    left join author_doi on article_info.doi = author_doi.doi \
-        	    group by article_info.doi);'
-queryInsert2 = 'insert into email_doi_tables(email, dois) \
-        	    (select email, \
-        	 	  array_agg(doi) as dois \
-        	    from email_doi \
-        	    group by email);'
+saveResults = foreach(i = 0:(writeNumChunks)) %do% {
+  startNum = (i * writeChunkSize) + 1
+  endNum = startNum + writeChunkSize - 1
+  fwrite(dtMerge[startNum:endNum,], file.path(localDir, paste0('pmc_email', i,'.csv.gz')))
+  drop_upload(file.path(localDir, paste0('pmc_email', i,'.csv.gz')), path = "Publication Path Files", dtoken = token)}
 
-dbExecute(con, queryInsert1)
-dbExecute(con, queryInsert2)
+fwrite(dtMerge, file.path(localDir, 'pmc_email.csv'))
+# drop_upload(file.path(localDir, 'pmc_email.csv'), path = "Publication Path Files", dtoken = token)
+
+
+timingsDT = addTimings(timingsDT, 'Start insert data.table')
+dbWriteTable(con, 'pmc_email', dtMerge, overwrite = TRUE)
+
+timingsDT = addTimings(timingsDT, 'End insert data.table')
+
+timingsDT = addTimings(timingsDT, 'End')
+timingsDT[, elapsed := elapsed - elapsed[1]]
+timingsDT[, diff := elapsed - shift(elapsed)]
+
+minElapsed = timingsDT$elapsed[nrow(timingsDT)] / 60
+minElapsed = timingsDT[.N]$elapsed / 60
+print(paste0('Finished, took ', as.character(minElapsed), ' minutes.'))
 
 dbDisconnect(con)
-
-

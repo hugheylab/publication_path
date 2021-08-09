@@ -38,11 +38,11 @@ def get_pg_authors_and_emails():
 
     # Perform a query.
     query = (
-        "INSERT INTO author_doi(author_pos, author_name, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name) as author_name, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
-        "from author_affiliation as author_affiliation "
-        "left join author as author on "
-        "author_affiliation.pmid = author.pmid and author_affiliation.author_pos = author.author_pos "
-        "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
+        "INSERT INTO author_doi(author_pos, author_name, author_last_name, author_fore_name, collective, affiliation_pos, author_affiliation, doi) (select author.author_pos as author_pos, CONCAT(author.fore_name, ' ', author.last_name, author.collective_name) as author_name, author.last_name as author_last_name, author.fore_name as author_fore_name, (author.collective_name IS NOT NULL) as collective, author_affiliation.affiliation_pos as affiliation_pos, author_affiliation.affiliation as author_affiliation, article_id.id_value as doi "
+        "from author as author "
+        "left join author_affiliation as author_affiliation on "
+        "author.pmid = author_affiliation.pmid and author.author_pos = author_affiliation.author_pos "
+        "left join article_id as article_id on author.pmid = article_id.pmid "
         "where article_id.id_type = 'doi');")
     authStart = time.time()
     cur.execute(query)
@@ -52,7 +52,7 @@ def get_pg_authors_and_emails():
     db.commit()
     
     query = (
-        "INSERT INTO email_doi(doi, email) (select article_id.id_value as doi, unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z0-9_-]+)', 'g')) as email "
+        "INSERT INTO pmdb_email(doi, email, pmid) (select article_id.id_value as doi, LOWER(unnest(regexp_matches(author_affiliation.affiliation, '([a-zA-Z0-9.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z0-9_-]+)', 'g'))) as email, author_affiliation.pmid as pmid "
         "from author_affiliation as author_affiliation "
         "left join article_id as article_id on author_affiliation.pmid = article_id.pmid "
         "where article_id.id_type = 'doi');")
@@ -63,11 +63,15 @@ def get_pg_authors_and_emails():
         "PARTITION BY email, doi "
         "ORDER BY  id DESC NULLS LAST "
         ") rank_number  "
-        "FROM email_doi ) "
-        "delete from email_doi where id in (select id from email_rank where rank_number > 1);")
+        "FROM pmdb_email ) "
+        "delete from pmdb_email where id in (select id from email_rank where rank_number > 1);")
+    query3 = (
+        "INSERT INTO email_doi(doi, email, source) (select doi, email as email, 'pmdb' as source "
+        "from pmdb_email);")
     emStart = time.time()
     cur.execute(query)
     cur.execute(query2)
+    cur.execute(query3)
     emEnd = time.time()
     db.commit()
     cur = db.cursor()
@@ -128,13 +132,31 @@ def get_pg_article_info():
     cur.execute(query3)  # Query
 
     query4 = (
+        "insert into author_doi_tables(author_name, author_last_name, author_fore_name, dois) "
+	    "(select author_name as author_name, "
+        "max(lower(author_last_name)) as author_last_name, "
+        "max(lower(author_fore_name)) as author_fore_name, "
+	 	"array_agg(doi) as dois "
+	    "from author_doi "
+	    "where NOT(collective) "
+	    "group by author_name);")
+    cur.execute(query4)  # Query
+
+    query5 = (
+        "insert into author_list(author_name) "
+	    "select distinct(author_name) as author_name "
+	 	"from author_doi "
+	    "where NOT(collective);")
+    cur.execute(query5)  # Query
+
+    query6 = (
         "insert into pmid_doi(pmid, doi) "
 	    "(select pmid, "
 	 	"max(id_value) as doi "
 	    "from article_id "
 	    "where id_type = 'doi' "
 		"group by pmid);")
-    cur.execute(query4)  # Query
+    cur.execute(query6)  # Query
 
     db.commit()
     cur.close()
@@ -153,7 +175,7 @@ def add_email(email, doi):
     db = get_db()
 
     # Perform a query.
-    pg_query(db, 'insert', 'INSERT INTO email_doi(doi, email, automated) values(%s, %s, FALSE)',(doi, email))
+    pg_query(db, 'insert', 'INSERT INTO email_doi(doi, email, source, automated) values(%s, %s, \'manual\', FALSE)',(doi, email))
     pg_query(db, 'delete', 'DELETE FROM doi_child_tables where doi = %s ', (doi,))
     pg_query(db, 'delete', 'DELETE FROM email_doi_tables where email = %s ', (email,))
 

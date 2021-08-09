@@ -134,7 +134,7 @@ def enter(url_id):
                 if not path_item_tmp.error == '':
                     has_error = True
                 
-                if not 'Submission date' in path_item_tmp.error:
+                if not 'Submission date' in path_item_tmp.error and path_item_tmp.submit_date is not None and path_item_tmp.submit_date != '':
                     prior_date = path_item_tmp.submit_date
                 path_list_tmp.append(path_item_tmp.__dict__)
 
@@ -185,7 +185,12 @@ def enter(url_id):
                 sql = ''' INSERT INTO paper_path(step,submission_date,journal,url_param_id)
                     VALUES(%s,%s,%s,%s) '''
                 cur = db.cursor()
-                cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["url_param_id"]))
+                if path_item["submit_date"] != '':
+                    cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["url_param_id"]))
+                else:
+                    sql = ''' INSERT INTO paper_path(step,journal,url_param_id)
+                    VALUES(%s,%s,%s) '''
+                    cur.execute(sql, (path_item["step"], path_item["journal"], path_item["url_param_id"]))
                 db.commit()
                 cur.close()
             sql = ''' UPDATE email_url
@@ -231,6 +236,7 @@ class paper_path:
         self.error = ''
         if self.submit_date == '':
             # self.error = 'Submission date cannot be empty. '
+            self.error = ''
         else:
             if not previous_date == '':
                 if '-' in self.submit_date:
@@ -254,7 +260,7 @@ class paper_path:
                 
 
                 if s_date > max_date:
-                    self.error = self.error + 'Submission Date cannot be after the puiblication date. '
+                    self.error = self.error + 'Submission Date cannot be after the publication date. '
         
         if self.journal == '':
             self.error = self.error + 'Journal cannot be empty. '

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+<p><b>Step 1: {% block title %}Identify articles and email addresses{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Enter submission path(s)</p>
+{% endblock %}
+
+{% block content %}
+  <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-welcome" aria-expanded="false" aria-controls="collapse-welcome">Overview</button>
+  <div class="collapse" id="collapse-welcome">
+    <div class="card card-body">
+      <b>Hello, and thank you for checking out C(3P)O!</b> <br/>
+      This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
+      The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
+      Contributing involves two steps: <br/>
+      1. Identify articles on which you were an author. For each article, you will receive an email containing a special link. <br/>
+      2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/>
+      That’s it! Thank you again for participating! Please send any feedback to hugheylab.publishing.pipeline@gmail.com
+      <br/><br/>
+      *Please note that C(3P)O is currently in beta and is a work in progress.*
+    </div>
+  </div><br/><br/>
+  <form method="post">
+    <table style="width:100%;border-spacing: 0px;">
+      <tr>
+        <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
+          <!--<b>Article Information</b>-->
+          <b>Instructions </b>
+          <ul>
+            <li>If necessary, click Back to go to the previous screen and modify your search.</li>
+            <li>Select your name from the author list of each article for which you want to enter the submission path.</li>
+            <li>Click More information to show or hide author affiliations and article IDs.</li>
+            <li>Click Confirm to send an email to the email address you provide for each selected author.</li>
+          </ul>
+          <br/><input name="back" class="btn btn-secondary" type="submit" value="Back">
+        </td>
+      </tr>
+      {% for article_info in article_infos %}
+        <tr>
+          <td style="width: 100%; border-bottom: 1px solid black;">
+            <b>{{ article_info.article.title }}</b><br/>
+            <input type="hidden" name="{{article_info.article.doi + '---link_author_sel'}}" id="{{article_info.article.doi + '---link_author_sel'}}" />
+            {% for author in article_info.authors %}
+            <a onclick="selectAuthor(this)" href="javascript:void(0)" name="{{article_info.article.doi + '---' + author.author.id|string}}" id="{{article_info.article.doi + '---' + author.author.id|string}}" class="link-dark p-1">{{author.author['author_name']}}</a><sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}
+            <!--<input type="radio" id="{{article_info.article.doi + '---' + author.author.id|string}}" name="{{article_info.article.doi + '---author_sel'}}" value="{{article_info.article.doi + '---' + author.author.id|string}}"/><label for="{{article_info.article.doi + '---' + author.author.id|string}}">{{author.author['author_name']}}<sup>{% for affiliation in author.affiliation_nums %}{{affiliation}}{% if not loop.last %},&nbsp;{% endif %}{% endfor %}</sup>{% if not loop.last %},{% endif %}</label>-->
+            {% endfor %}<br/>
+            <!--<button onclick="clearAuthor(this)" type="button" class="btn btn-danger" disabled name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear selected author</button><br/><br/>-->
+            {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
+            {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
+            <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
+            <div class="collapse" id="collapse-{{loop.index}}">
+              <div class="card card-body">
+                Affiliations:<br/>
+                {% for affiliation in article_info.affiliation_list %}
+                    {{ loop.index }}.&nbsp;{{affiliation}}<br/>
+                {% endfor %}<br/>
+                DOI:&nbsp;{{ article_info.article.doi }}<br/>
+                PMID:&nbsp;{{ article_info.article.pmid }}<br/>
+              </div>
+            </div><br/><br/>
+          </td>
+        </tr>
+      {% endfor %}
+    </table><br/>
+    Email Address:&nbsp;<input id="email_address" onkeyup="keyUpEmail()" name="email_address"/>
+    <br/><input name="back" class="btn btn-secondary" type="submit" value="Back">&nbsp;&nbsp;&nbsp;<input disabled="true" type="submit" id="confirm_button" class="btn btn-success" value="Confirm">
+  </form>
+  <script>
+    function selectAuthor(source) {
+      var id_str = source.getAttribute("name");
+      var doi = id_str.split('---')[0]
+      var author_id = id_str.split('---')[1]
+      if (document.getElementById(doi + '---link_author_sel').value == id_str) {
+        clearAuthor(source)
+      } else{
+        document.getElementById(doi + '---link_author_sel').value = id_str
+        //document.getElementById(doi + '---remove_link_author_sel').disabled = false
+        source.setAttribute('class', 'link-dark bg-info rounded p-1')
+        var elmnts = document.getElementsByTagName("a");
+        for (var i = 0; i < elmnts.length;i++) {
+          var elmnt = elmnts[i]
+          console.log(i)
+          if (elmnt.getAttribute("name").includes("---")) {
+            console.log(elmnt.getAttribute("name"))
+            var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
+            var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
+            if (elmnt_doi == doi && elmnt_author_id != author_id) {
+              console.log("not disabled")
+              //elmnt.disabled = false
+              elmnt.setAttribute('class', 'link-dark p-1')
+            }
+          }
+        }
+      }
+      
+      
+    }
+    function clearAuthor(source) {
+      var id_str = source.getAttribute("name");
+      var doi = id_str.split('---')[0]
+      document.getElementById(doi + '---link_author_sel').value = ''
+      var elmnts = document.getElementsByTagName('a');
+      for (var i = 0; i < elmnts.length;i++) {
+        var elmnt = elmnts[i]
+        console.log(i)
+        if (elmnt.getAttribute("name").includes("---")) {
+          console.log(elmnt.getAttribute("name"))
+          var elmnt_doi = elmnt.getAttribute("name").split("---")[0]
+          var elmnt_author_id = elmnt.getAttribute("name").split("---")[1]
+          if (elmnt_doi == doi) {
+            console.log("not disabled")
+            //elmnt.disabled = false
+            elmnt.setAttribute('class', 'link-dark p-1')
+          }
+        }
+      }
+      //source.disabled = true
+    }
+    function validateEmail(email) {
+      const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      return re.test(email);
+    }
+    function keyUpEmail() {
+      var text = document.getElementById("email_address").value;
+      if(text != undefined && text != null && text != "" && validateEmail(text)) {
+        document.getElementById("confirm_button").disabled = false;
+      } else {
+        document.getElementById("confirm_button").disabled = true;
+      }
+    }
+    </script>
+{% endblock %}

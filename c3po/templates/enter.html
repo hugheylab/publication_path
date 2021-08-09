@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
 
-{% block header %}
-  <h1>{% block title %}Submit Pipeline Order{% endblock %}</h1>
+  
+
+{% block navbar %}
+  <p>Step 1: Identify articles and email addresses&nbsp;&nbsp;→&nbsp;&nbsp;
+  <b>Step 2: {% block title %}Enter{% endblock %} submission path(s)</b></p>
 {% endblock %}
 
 {% block content %}
@@ -81,44 +84,65 @@ $(document).ready(function ()
   });
 });
 </script>
+<button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-welcome" aria-expanded="false" aria-controls="collapse-welcome">Overview</button>
+<div class="collapse" id="collapse-welcome">
+  <div class="card card-body">
+    <b>Hello, and thank you for checking out C(3P)O!</b> <br/>
+    This website allows authors to contribute information about the paths their papers have taken on the way to publication. 
+    The “crowd-sourced” information will become part of a publicly available database that will shed light on a hidden aspect of the biomedical publishing system. 
+    Contributing involves two steps: <br/>
+    1. Identify articles on which you were the corresponding author. For each article, you will receive an email containing a special link. <br/>
+    2. Follow the link to enter the article’s submission path, i.e., the sequence of journals (optionally, with dates) to which you submitted the manuscript. <br/>
+    That’s it! Thank you again for participating! Please send any feedback to hugheylab.publishing.pipeline@gmail.com
+    <br/><br/>
+    *Please note that C(3P)O is currently in beta and is a work in progress.*
+  </div>
+</div><br/><br/>
   {% if allow_enter == False %}
     <h2 style="color:orange">Information has already been entered using this unique URL, please re-register if you wish to re-enter!</h2>
     {% else %}
-    <b>Instructions: </b>
-    <ol>
+    <b>Instructions </b>
+    <ul>
       {% if confirm == False %}
-        <li>Enter each submission step in chronological order for the paper listed. If you submitted to a journal multiple times, only use the first instance of submission.</li>
-        <li>Search for journals from parsed pubmed journal names in the drop down search.</li>
-        <li>Add/delete steps as necessary.</li>
-        <li>Once you have entered all information, click "Submit." We will check for possible entry errors and highlight them.</li>
-        <li>If no errors are found, you will be taken to a final confirmation screen.</li>
+        <li>Enter the submission steps in chronological order for the specified article.</li>
+        <li>Consider only the first submission to each journal, so ignoring any resubmissions.</li>
+        <li>Search for and select the journal for each step from the dropdown menu.</li>
+        <li>First submission dates are optional, but appreciated.</li>
+        <li>Use the buttons to add, delete, and reorder steps as necessary.</li>
+        <li>Click Submit to check for possible entry errors and then go to a confirmation page.</li>
       {% else %}
-        <li>If you realize you made a mistake, click "Cancel" to return to the entry screen.</li>
-        <li>Once you have confirmed all streps are entered correctly, click "Confirm" to finish submitting the information.</li>
+        <li>Verify that the provided submission path is correct.</li>
+        <li>If necessary, click Back to return to the entry page.</li>
+        <li>When ready, click Confirm to submit the information.</li>
       {% endif %}
-    </ol>
+    </ul>
   {% endif %}
-  <h3>{{ article_info.title }}</h3>
-  {{ article_info.journal_name }}<br/>
-  {{ article_info.pub_date }}<br/>
-  {% for author in author_doi %}
-      {{author.author['author_name']}}{% if not loop.last %},&nbsp; {% endif %}
-  {% endfor %}<br/>
-  {{ article_info.doi }}<br/>
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">{{ article_info.title }}</h5>
+      <h6 class="card-subtitle mb-2 text-muted">
+        {% for author in author_doi %}
+            {{author.author['author_name']}}{% if not loop.last %},{% endif %}
+        {% endfor %}<br/>
+        {{ article_info.journal_name }}, {{ article_info.pub_date }}<br/>
+        DOI:&nbsp;{{ article_info.doi }}
+      </h6>
+    </div>
+  </div>
   {% if allow_enter == True and has_completed == True %}
-    <h3 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h3>
+    <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
-        <td style="width:25%">
-          Step
+        <td style="width:25%;">
+          <b>Step</b>
         </td>
-        <td style="width:25%">
-          First Submission Date
+        <td style="width:40%;">
+          <b>Journal</b>
         </td>
-        <td style="width:40%">
-          Journal
+        <td style="width:25%;">
+          <b>First submission date</b>
         </td>
-        <td style="width:10%">
+        <td style="width:10%;">
           &nbsp;
         </td>
       </tr>
@@ -126,81 +150,85 @@ $(document).ready(function ()
         <tr>
           <td>
             {{ path_item.step }}
-            {% if loop.last %}
-              &nbsp;(Final Submission)
-            {% endif %}
-          </td>
-          <td>
-            {{ path_item.submission_date }}
           </td>
           <td>
             {{ path_item.journal }}
           </td>
+          <td>
+            {% if path_item.submission_date != NULL and path_item.submission_date != "" and path_item.submission_date != None %}
+              {{ path_item.submission_date }}
+            {% else %}
+              NA
+            {% endif %}
+          </td>
         </tr>
       {% endfor %}
     </table>
-  {% endif %}
-  <h3>Step Entry</h3>
+  {% endif %}<br/>
   <form id="package_form" action="" method="post">
-    <table style="width:70%;">
+    <table style="width:100%;">
       <tr>
-        <td style="width:5%">
-          &nbsp;
+        {% if confirm == False %}
+          <td style="width:5%;">
+            &nbsp;
+          </td>
+          <td style="width:10%;">
+            &nbsp;
+          </td>
+          <td style="width:10%;">
+            &nbsp;
+          </td>
+        {% endif %}
+        <td style="width:5%;">
+          <b>Step</b>
         </td>
-        <td style="width:10%">
-          &nbsp;
+        <td style="width:40%;">
+          <b>Journal</b>
         </td>
-        <td style="width:15%">
-          Step
+        <td style="width:25%;">
+          <b>First submission date</b>
         </td>
-        <td style="width:25%">
-          First Submission Date
-        </td>
-        <td style="width:40%">
-          Journal
-        </td>
+        {% if confirm == True %}
+          <td style="width:5%;">
+            &nbsp;
+          </td>
+          <td style="width:10%">
+            &nbsp;
+          </td>
+        {% endif %}
       </tr>
         {% for path_item in session["path_list"] %}
           <tr>
-            <td style="vertical-align: bottom;">
-              {% if confirm == False and allow_enter == True %}
-                <input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">
-              {% endif %}
-            </td>
-            <td style="vertical-align: bottom; ">
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                <input  type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete Step" />
-              {% endif %}
-            </td>
-            <td>
-              {% if not loop.last and confirm == False and allow_enter == True %}
-                {% if not loop.first %}
-                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+            {% if confirm == False %}
+              <td style="vertical-align: bottom;padding: 5px;">
+                {% if confirm == False and allow_enter == True %}
+                  <!--<input class="button-link" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add Step Above">-->
+                  <input class="btn btn-primary" type="submit" name="{{ 'add_item' + path_item.step|string }}" value="Add step above">
                 {% endif %}
-                {% if not loop.revindex0 < 2 %}
-                  <input type="submit" class="button-link" style="text-decoration: none;" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
+              </td>
+              <td style="vertical-align: bottom; padding: 5px;">
+                {% if not loop.last and confirm == False and allow_enter == True %}
+                  <input class="btn btn-danger" type="submit" name="{{ 'del_item' + path_item.step|string }}" value="Delete step" />
                 {% endif %}
-
-              {% endif %}
+              </td>
+              <td style="vertical-align: bottom; padding: 5px;">
+                {% if not loop.last and confirm == False and allow_enter == True %}
+                    <input type="submit" class="btn btn-outline-info {% if loop.first %} disabled {% endif %}" id="{{'up_item' + path_item.step|string }}" name="{{'up_item' + path_item.step|string }}" value="&#8593;" />
+                    <input type="submit" class="btn btn-outline-info {% if loop.revindex0 < 2 %} disabled {% endif %}" id="{{'down_item' + path_item.step|string }}" name="{{'down_item' + path_item.step|string }}" value="&#8595;" />
+  
+                {% endif %}
+              </td>
+            {% endif %}
+            <td style="padding: 5px;">
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
-              {% if loop.last %}
-                &nbsp;(Final Submission)
-              {% endif %}<br/>
+              <br/>
               {% if (not path_item.error == '') and path_item.show_error %}
                 <p style="color:red">ERROR:&nbsp;{{ path_item.error }}</p>
               {% endif %}
             </td>
-            <td>
-              {% if confirm == False and allow_enter == True %}
-                <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
-              {% else %}
-                <input hidden type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
-                {{ path_item.submit_date }}
-              {% endif %}
-            </td>
-            <td>
+            <td style="padding: 5px;">
               {% if not loop.last and confirm == False and allow_enter == True %}
                 <select class="js-example-basic-single" style="width: 100%;" id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}">
                   <option value="">--None Selected--</option>
@@ -217,20 +245,40 @@ $(document).ready(function ()
                 {{ path_item.journal }}
               {% endif %}
             </td>
+            <td style="padding: 5px;">
+              {% if confirm == False and allow_enter == True %}
+                <input type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
+              {% else %}
+                <input hidden type="date" id="{{ 'submit_date' + path_item.step|string }}" name="submit_date" value="{{ path_item.submit_date }}" class="datechk">
+                {% if path_item.submit_date != NULL and path_item.submit_date != "" %}
+                  {{ path_item.submit_date }}
+                {% else %}
+                  NA
+                {% endif %}
+              {% endif %}
+            </td>
+            {% if confirm == True %}
+              <td style="width:5%;padding: 5px;">
+                &nbsp;
+              </td>
+              <td style="width:10%;padding: 5px;">
+                &nbsp;
+              </td>
+            {% endif %}
           </tr>
         {% endfor %}
     </table><br/>
     {% if confirm == False and allow_enter == True %}
       <div class="panel-body">
-        <input type="submit" name="submit" value="Submit">
+        <input class="btn btn-success" type="submit" name="submit" value="Submit">
       </div>
     {% else %}
       {% if allow_enter == True %}
         <div class="panel-body">
-          <input type="submit" name="cancel" value="Cancel">
+          <input class="btn btn-secondary" type="submit" name="cancel" value="Back">
         </div><br/>
         <div class="panel-body">
-          <input type="submit" name="confirm" value="Confirm">
+          <input class="btn btn-success" type="submit" name="confirm" value="Confirm">
         </div>
       {% endif %}
     {% endif %}
