@@ -76,6 +76,7 @@
     1. Get the filenames of each chunk from dropbox.
     2. Download the files from dropbox.
     3. Insert the data from the files into an intermediary table.
+    4. Run a SQL script that partially re-initializes the database with emails from both pmdb and pmc.
 12. Again, you may have to modify some of the variables, so see some of those below:
     1. `token` Line 6: See 6.1.
     2. `connectDB()` Lines 9-10: See 6.2.
