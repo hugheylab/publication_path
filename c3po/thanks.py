@@ -15,7 +15,7 @@ def thanks(thanks_type):
 
     text = 'Thank you for registering to participate! All applicable authors should soon receive an email for each specified article. Each email will contain a unique URL to enter that article\'s submission path.'
     if thanks_type == "submission":
-        text = 'Thank you for submitting your publication information!'
+        text = 'Thank you for contributing your paper\'s submission path!'
 
     if request.method == 'POST':
         return redirect(url_for('author.register'))

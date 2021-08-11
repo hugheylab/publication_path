@@ -271,5 +271,5 @@ class paper_path:
         elif self.journal == previous_journal:
             self.error = self.error + 'Journal cannot be equal to the previous journal. '
         if self.peer_review == '' or self.peer_review == None:
-            self.error = self.error + 'Submitted for peer review cannot be empty. '
+            self.error = self.error + 'Sent out for peer review cannot be empty. '
 
