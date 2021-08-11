@@ -133,11 +133,14 @@ $(document).ready(function ()
     <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
     <table>
       <tr>
-        <td style="width:25%;">
+        <td style="width:15%;">
           <b>Step</b>
         </td>
         <td style="width:40%;">
           <b>Journal</b>
+        </td>
+        <td style="width:10%;">
+          <b>Submitted for peer review?</b>
         </td>
         <td style="width:25%;">
           <b>First submission date</b>
@@ -153,6 +156,9 @@ $(document).ready(function ()
           </td>
           <td>
             {{ path_item.journal }}
+          </td>
+          <td>
+            {{ path_item.peer_review }}
           </td>
           <td>
             {% if path_item.submission_date != NULL and path_item.submission_date != "" and path_item.submission_date != None %}
@@ -172,10 +178,10 @@ $(document).ready(function ()
           <td style="width:5%;">
             &nbsp;
           </td>
-          <td style="width:10%;">
+          <td style="width:5%;">
             &nbsp;
           </td>
-          <td style="width:10%;">
+          <td style="width:5%;">
             &nbsp;
           </td>
         {% endif %}
@@ -185,14 +191,14 @@ $(document).ready(function ()
         <td style="width:40%;">
           <b>Journal</b>
         </td>
+        <td style="width:10%;">
+          <b>Submitted for peer review?</b>
+        </td>
         <td style="width:25%;">
           <b>First submission date</b>
         </td>
         {% if confirm == True %}
           <td style="width:5%;">
-            &nbsp;
-          </td>
-          <td style="width:10%">
             &nbsp;
           </td>
         {% endif %}
@@ -243,6 +249,22 @@ $(document).ready(function ()
               {% else %}
                 <input hidden id="{{ 'journal' + path_item.step|string }}" name="journal" value="{{ path_item.journal }}" />
                 {{ path_item.journal }}
+              {% endif %}
+            </td>
+            <td style="padding: 5px;">
+              {% if confirm == False and allow_enter == True %}
+                <input type="radio" id="{{ 'peer_review_yes_' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="Yes"
+                  {% if path_item.peer_review == 'Yes' %} checked {% endif %}>
+                <label for="{{ 'peer_review_yes_' + path_item.step|string }}">Yes</label><br/>
+                <input type="radio" id="{{ 'peer_review_no_' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="No"
+                {% if path_item.peer_review == 'No' %} checked {% endif %}>
+                <label for="{{ 'peer_review_no_' + path_item.step|string }}">No</label><br/>
+                <input type="radio" id="{{ 'peer_review_unknown_' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="Unknown"
+                {% if path_item.peer_review == 'Unknown' %} checked {% endif %}>
+                <label for="{{ 'peer_review_unknown_' + path_item.step|string }}">Unknown</label>
+              {% else %}
+                <input hidden id="{{ 'peer_review' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="{{ path_item.peer_review }}" class="datechk">
+                {{ path_item.peer_review }}
               {% endif %}
             </td>
             <td style="padding: 5px;">

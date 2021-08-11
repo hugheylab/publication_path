@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS paper_path (
   step INTEGER NOT NULL,
   submission_date DATE,
   journal TEXT NOT NULL,
+  peer_review TEXT,
   url_param_id TEXT NOT NULL,
   FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)
 );

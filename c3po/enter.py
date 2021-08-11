@@ -88,8 +88,8 @@ def enter(url_id):
 
 
     if request.method == 'GET' and allow_enter == True:
-        path_list_tmp = [paper_path(idx = 0, url_param_id = url_id, step = 1, journal = '', submit_date = '', error = '', show_error = False).__dict__]
-        path_list_tmp.append(paper_path(idx = 1, url_param_id = url_id, step = 2, journal = article_info["journal_name"], submit_date = '', error = '', show_error = False).__dict__)
+        path_list_tmp = [paper_path(idx = 0, url_param_id = url_id, step = 1, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__]
+        path_list_tmp.append(paper_path(idx = 1, url_param_id = url_id, step = 2, journal = article_info["journal_name"], peer_review = 'Yes', submit_date = '', error = '', show_error = False).__dict__)
         session["path_list"] = path_list_tmp
 
     elif request.method == 'POST' and allow_enter == True:
@@ -101,6 +101,9 @@ def enter(url_id):
         steps = request.form.getlist('step')
         journals = request.form.getlist('journal')
         submit_dates = request.form.getlist('submit_date')
+        peer_reviews = []
+        for step in steps:
+            peer_reviews.append(request.form.get('peer_review' + step))
         del_item = request.form.getlist('del_item')
         last = len(idxs) - 1
 
@@ -126,9 +129,9 @@ def enter(url_id):
                 if down_item_name in request.form:
                     down_idx = i
                 if add_item_name in request.form:
-                    path_list_tmp.append(paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, '', '', '', is_submit).__dict__)
+                    path_list_tmp.append(paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, '', '', '', '', is_submit).__dict__)
                     addMod = addMod + 1
-                path_item_tmp = paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, journals[i], submit_dates[i], '', is_submit)
+                path_item_tmp = paper_path(i + delMod + addMod, url_id, (i + 1) + delMod + addMod, journals[i], peer_reviews[i], submit_dates[i], '', is_submit)
                 path_item_tmp.validate(prior_date, max_date, prev_journal)
                 prev_journal = path_item_tmp.journal
                 if not path_item_tmp.error == '':
@@ -165,11 +168,11 @@ def enter(url_id):
         if 'add_item' in request.form:
             final_path = path_list_tmp.pop(len(path_list_tmp) - 1)
             if last == 0:
-                path_list_tmp = [paper_path(idx = 0, url_param_id = url_id, step = 1, journal = '', submit_date = '', error = '', show_error = False).__dict__]
+                path_list_tmp = [paper_path(idx = 0, url_param_id = url_id, step = 1, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__]
             else:
                 newIdx = int(idxs[last])
                 newStep = int(steps[last])
-                path_list_tmp.append(paper_path(newIdx, url_id, newStep, journal = '', submit_date = '', error = '', show_error = False).__dict__)
+                path_list_tmp.append(paper_path(newIdx, url_id, newStep, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__)
             final_path["idx"] = final_path["idx"] + 1
             final_path["step"] = final_path["step"] + 1
             path_list_tmp.append(final_path)
@@ -182,15 +185,15 @@ def enter(url_id):
                 confirm = True
         elif 'confirm' in request.form:
             for path_item in path_list_tmp:
-                sql = ''' INSERT INTO paper_path(step,submission_date,journal,url_param_id)
-                    VALUES(%s,%s,%s,%s) '''
+                sql = ''' INSERT INTO paper_path(step,submission_date,journal,peer_review,url_param_id)
+                    VALUES(%s,%s,%s,%s,%s) '''
                 cur = db.cursor()
                 if path_item["submit_date"] != '':
-                    cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["url_param_id"]))
+                    cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["peer_review"], path_item["url_param_id"]))
                 else:
-                    sql = ''' INSERT INTO paper_path(step,journal,url_param_id)
-                    VALUES(%s,%s,%s) '''
-                    cur.execute(sql, (path_item["step"], path_item["journal"], path_item["url_param_id"]))
+                    sql = ''' INSERT INTO paper_path(step,journal,peer_review,url_param_id)
+                    VALUES(%s,%s,%s,%s) '''
+                    cur.execute(sql, (path_item["step"], path_item["journal"], path_item["peer_review"], path_item["url_param_id"]))
                 db.commit()
                 cur.close()
             sql = ''' UPDATE email_url
@@ -223,11 +226,12 @@ def enter(url_id):
     return render_template('enter.html', email_url = email_url, journal_opts = journal_opts, article_info = article_info, author_doi = auth_aff_list, affiliation_list = affiliation_list, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0))
 
 class paper_path:
-    def __init__(self, idx, url_param_id, step, journal, submit_date, error, show_error):
+    def __init__(self, idx, url_param_id, step, journal, peer_review, submit_date, error, show_error):
         self.idx = idx
         self.url_param_id = url_param_id
         self.step = step
         self.journal = journal
+        self.peer_review = peer_review
         self.submit_date = submit_date
         self.error = error
         self.show_error = show_error
@@ -235,7 +239,7 @@ class paper_path:
     def validate(self, previous_date, max_date, previous_journal):
         self.error = ''
         if self.submit_date == '':
-            # self.error = 'Submission date cannot be empty. '
+            # self.error = 'Submitt date cannot be empty. '
             self.error = ''
         else:
             if not previous_date == '':
@@ -266,4 +270,6 @@ class paper_path:
             self.error = self.error + 'Journal cannot be empty. '
         elif self.journal == previous_journal:
             self.error = self.error + 'Journal cannot be equal to the previous journal. '
+        if self.peer_review == '' or self.peer_review == None:
+            self.error = self.error + 'Submitted for peer review cannot be empty. '
 
