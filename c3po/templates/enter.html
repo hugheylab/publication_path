@@ -252,7 +252,7 @@ $(document).ready(function ()
               {% endif %}
             </td>
             <td style="padding: 5px;">
-              {% if confirm == False and allow_enter == True %}
+              {% if not loop.last and confirm == False and allow_enter == True %}
                 <input type="radio" id="{{ 'peer_review_yes_' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="Yes"
                   {% if path_item.peer_review == 'Yes' %} checked {% endif %}>
                 <label for="{{ 'peer_review_yes_' + path_item.step|string }}">Yes</label><br/>
