@@ -261,7 +261,7 @@ $(document).ready(function ()
                 <label for="{{ 'peer_review_no_' + path_item.step|string }}">No</label><br/>
                 <input type="radio" id="{{ 'peer_review_unknown_' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="Unsure"
                 {% if path_item.peer_review == 'Unsure' %} checked {% endif %}>
-                <label for="{{ 'peer_review_unknown_' + path_item.step|string }}">Unknown</label>
+                <label for="{{ 'peer_review_unknown_' + path_item.step|string }}">Unsure</label>
               {% else %}
                 <input hidden id="{{ 'peer_review' + path_item.step|string }}" name="{{ 'peer_review' + path_item.step|string }}" value="{{ path_item.peer_review }}" class="datechk">
                 {{ path_item.peer_review }}
