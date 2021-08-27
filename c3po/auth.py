@@ -6,8 +6,9 @@ from psycopg2.extras import DictCursor
 from datetime import datetime
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify
 )
+import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from c3po.db import get_db
@@ -21,12 +22,41 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 def register():
 
     if request.method == 'GET':
-        url_doi = request.args.get('doi')
-        email = request.args.get('email')
-        if email != None and email != '':
-            return render_template('auth/register.html', doi = email, search_type = 'email')
-        elif url_doi != None and url_doi != '':
-            return render_template('auth/register.html', doi = url_doi, search_type = 'doi')
+        url_code = request.args.get('code')
+        db = get_db()
+        # Uncomment below and replace string with dynamic link redirect
+        redirect_uri = 'https://localhost:5000/auth/register'
+        app_key = pg_query(db, 'fetchone', 'SELECT * FROM orcid_keys LIMIT 1',())
+        orcid_link = 'https://orcid.org/oauth/authorize?client_id=' + app_key['client_id'] + '&response_type=code&scope=/read-limited&redirect_uri=' + redirect_uri
+        if url_code != None and url_code != "" :
+            print('url_code: ' + url_code)
+            orcid_auth_url = 'https://orcid.org/oauth/token'
+            headers = {'Accept' : 'application/json'}
+            data = { 
+                'client_id' : app_key['client_id'],
+                'client_secret' : app_key['client_secret'],
+                'grant_type' : 'authorization_code',
+                'code' : url_code,
+                'redirect_uri' : redirect_uri
+            }
+            r = requests.post(orcid_auth_url, headers=headers, data=data)
+            print(r.json())
+            orcid_user = pg_query(db, 'fetchone', 'SELECT * FROM user_orcid WHERE orcid_id = \'' + r.json()['orcid'] + '\'', ())
+            if orcid_user != None:
+                sql = 'UPDATE user_orcid SET orcid_access_token = %s, orcid_refresh_token = %s WHERE orcid_id = %s;'
+                values = (r.json()['access_token'], r.json()['refresh_token'], r.json()['orcid'])
+                pg_query(db, 'update', sql, values)
+            else:
+                sql = ''' INSERT INTO user_orcid(orcid_id, orcid_access_token, orcid_refresh_token, orcid_name)
+                    VALUES(%s, %s, %s, %s) '''
+                values = (r.json()['orcid'], r.json()['access_token'], r.json()['refresh_token'], r.json()['name'])
+                # cur = db.cursor()
+                # cur.execute(sql, email_url_tmp)
+                # db.commit()
+                pg_query(db, 'insert', sql, values)
+        else:
+            db.close()
+            return(render_template('auth/register.html', orcid_link = orcid_link))
 
     if request.method == 'POST':
         db = get_db()

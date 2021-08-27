@@ -136,3 +136,23 @@ CREATE TABLE IF NOT EXISTS pmdb_email (
   pmid TEXT NOT NULL,
   doi TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS user_orcid (
+  orcid_id TEXT PRIMARY KEY,
+  orcid_access_token TEXT NOT NULL,
+  orcid_refresh_token TEXT NOT NULL,
+  orcid_name TEXT NOT NULL,
+  fore_name TEXT,
+  last_name TEXT,
+  email TEXT,
+  birthday DATE,
+  sex TEXT,
+  current_institution TEXT,
+  previous_institutions TEXT[]
+);
+
+CREATE TABLE IF NOT EXISTS orcid_keys (
+  key_type TEXT,
+  client_id TEXT,
+  client_secret TEXT
+);
