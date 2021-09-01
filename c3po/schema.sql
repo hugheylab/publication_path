@@ -142,11 +142,16 @@ CREATE TABLE IF NOT EXISTS user_orcid (
   orcid_access_token TEXT NOT NULL,
   orcid_refresh_token TEXT NOT NULL,
   orcid_name TEXT NOT NULL,
-  fore_name TEXT,
-  last_name TEXT,
+  orcid_scope TEXT,
+  initialized BOOLEAN DEFAULT FALSE,
+  raw_text TEXT,
+  full_name TEXT,
   email TEXT,
   birthday DATE,
-  sex TEXT,
+  gender TEXT,
+  ethnicity TEXT,
+  career_stage TEXT,
+  highest_education TEXT,
   current_institution TEXT,
   previous_institutions TEXT[]
 );
@@ -154,5 +159,6 @@ CREATE TABLE IF NOT EXISTS user_orcid (
 CREATE TABLE IF NOT EXISTS orcid_keys (
   key_type TEXT,
   client_id TEXT,
-  client_secret TEXT
+  client_secret TEXT,
+  read_public_key TEXT
 );

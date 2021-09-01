@@ -34,6 +34,8 @@ def create_app(test_config=None):
     app.register_blueprint(author.bp)
     from . import enter
     app.register_blueprint(enter.bp)
+    from . import home
+    app.register_blueprint(home.bp)
     from . import thanks
     app.register_blueprint(thanks.bp)
 

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+  <p><b>Step 1: {% block title %}Register{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Enter submission path(s)</p>
+{% endblock %}
+
+{% block content %}
+    Welcome, {{user.name}}!
+{% endblock %}

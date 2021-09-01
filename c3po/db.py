@@ -7,6 +7,7 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 import time
 from datetime import datetime
+import requests
 
 
 def get_db():
@@ -203,6 +204,26 @@ def add_email(email, doi):
     db.commit()
     db.close()
 
+def get_orcid_read_token(token_url = 'https://orcid.org/oauth/token'):
+    db = get_db()
+    app_key = get_orcid_app_info(db)
+    headers = {'Accept' : 'application/json'}
+    data = { 
+        'client_id' : app_key['client_id'],
+        'client_secret' : app_key['client_secret'],
+        'grant_type' : 'client_credentials',
+        'scope' : '/read-public'
+    }
+    r = requests.post(token_url, headers=headers, data=data)
+    sql = 'UPDATE orcid_keys SET read_public_key = %s WHERE client_id = %s;'
+    values = (r.json()['access_token'], app_key['client_id'])
+    pg_query(db, 'update', sql, values)
+    db.close()
+
+def get_orcid_app_info(db):
+    app_key = pg_query(db, 'fetchone', 'SELECT * FROM orcid_keys LIMIT 1',())
+    return(app_key)
+
 
 def pg_query(db = None, qType = 'fetchone', query = '', arguments = None, commit = True, closeDb = False):
     if db is None :
@@ -249,6 +270,7 @@ def init_db_postgres_command():
     get_pg_authors_and_emails()
     get_pg_article_info()
     get_journals()
+    get_orcid_read_token()
     click.echo('Initialized the database.')
 
 def init_app(app):
