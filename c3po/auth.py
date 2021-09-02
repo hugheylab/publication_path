@@ -12,6 +12,7 @@ import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from c3po.db import get_db
+from c3po.db import close_db
 from c3po.db import pg_query
 from c3po.email_handler import send_email
 import c3po.orcid_api
@@ -25,36 +26,14 @@ def register():
     url_code = request.args.get('code')
     db = get_db()
     # Uncomment below and replace string with dynamic link redirect
-    redirect_uri = 'https://localhost:5000/auth/register'
     app_key = c3po.orcid_api.get_app_info(db)
-    scope = '/authenticate'
-    orcid_link = 'https://orcid.org/oauth/authorize?client_id=' + app_key['client_id'] + '&response_type=code&scope=' + scope + '&redirect_uri=' + redirect_uri
+    orcid_link = c3po.orcid_api.get_oauth_link(app_key);
     if url_code != None and url_code != "" :
-        print('url_code: ' + url_code)
-        orcid_auth_url = 'https://orcid.org/oauth/token'
-        headers = {'Accept' : 'application/json'}
-        data = { 
-            'client_id' : app_key['client_id'],
-            'client_secret' : app_key['client_secret'],
-            'grant_type' : 'authorization_code',
-            'code' : url_code,
-            'redirect_uri' : redirect_uri,
-        }
-        r = requests.post(orcid_auth_url, headers=headers, data=data)
-        print(r.json())
-        orcid_user = pg_query(db, 'fetchone', 'SELECT * FROM user_orcid WHERE orcid_id = \'' + r.json()['orcid'] + '\' AND orcid_scope = \'' + scope + '\'', ())
-        if orcid_user != None:
-            sql = 'UPDATE user_orcid SET orcid_access_token = %s, orcid_refresh_token = %s, orcid_scope = %s, raw_text = %s WHERE orcid_id = %s AND orcid_scope = %s;'
-            values = (r.json()['access_token'], r.json()['refresh_token'], r.json()['scope'], r.text, r.json()['orcid'], r.json()['scope'])
-            pg_query(db, 'update', sql, values)
-        else:
-            sql = ''' INSERT INTO user_orcid(orcid_id, orcid_access_token, orcid_refresh_token, orcid_name, orcid_scope, raw_text)
-                VALUES(%s, %s, %s, %s, %s, %s) '''
-            values = (r.json()['orcid'], r.json()['access_token'], r.json()['refresh_token'], r.json()['name'], r.json()['scope'], r.text)
-            # cur = db.cursor()
-            # cur.execute(sql, email_url_tmp)
-            # db.commit()
-            pg_query(db, 'insert', sql, values)
+        orcid_user_id = c3po.orcid_api.get_login_access_token(url_code, db, app_key)
+        session.clear()
+        session['user_id'] = orcid_user_id
+        db.close()
+        return redirect(url_for('home.landing'))
     else:
         db.close()
         return(render_template('auth/register.html', orcid_link = orcid_link))
@@ -66,20 +45,21 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        g.user = get_db().execute(
-            'SELECT * FROM user WHERE id = ?', (user_id,)
-        ).fetchone()
+        db = get_db()
+        g.user = pg_query(db, 'fetchone', 'SELECT * FROM user_orcid WHERE orcid_id = \'' + user_id + '\';', ())
+        close_db()
+        db.close()
 
 @bp.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('index'))
+    return redirect(url_for('auth.register'))
 
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('auth.register'))
 
         return view(**kwargs)
 

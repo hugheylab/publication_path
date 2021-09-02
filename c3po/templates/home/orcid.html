@@ -8,5 +8,11 @@
 
 {% block content %}
     Welcome, {{ user.full_name }}!<br/>
-    <a href='/home/orcid'>Find my DOIs in ORCID</a>
+    Works from orcid:<br/>
+    <ul>
+        {% for doi in dois %}
+            <li>{{ doi }}</li>
+        {% endfor %}
+    </ul>
+    <a href="/home/landing">Return to home</a>
 {% endblock %}
