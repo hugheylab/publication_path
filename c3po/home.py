@@ -30,5 +30,5 @@ def landing():
 @login_required
 def orcid():
     orcid = g.user['orcid_id']
-    dois = get_user_works(orcid, None)
-    return render_template('home/orcid.html', user = g.user, dois = dois)
+    doi_list = get_user_works(orcid, None)
+    return render_template('home/orcid.html', user = g.user, dois = doi_list)
