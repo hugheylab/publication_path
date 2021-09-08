@@ -1,0 +1,4 @@
+include c3po/schema.sql
+graft c3po/static
+graft c3po/templates
+global-exclude *.pyc

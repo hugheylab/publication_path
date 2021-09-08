@@ -15,3 +15,6 @@ pmc_files/*
 c3po/database_external.ini
 .httr-oauth
 tokens/token.rds
+build/*
+c3po.egg-info/*
+*.whl
