@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block navbar %}
+  <p><b>Step 1: {% block title %}Register{% endblock %}</b>&nbsp;&nbsp;→&nbsp;&nbsp;
+  Step 2: Enter submission path(s)</p>
+{% endblock %}
+
+{% block content %}
+    Thank you for registering! Please enter some more information for us before continuing to the application:
+    <form method="post">
+      <!--Search Type<br/><br/>-->
+      <input hidden id="orcid_id" name="orcid_id" value="{{ user['orcid_id'] }}">
+      <div class="form-group">
+        <label for="full_name">Full name</label>
+        <input required class="form-control" id="full_name" name="full_name" value="{{ user['full_name'] }}">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input required type="email" class="form-control" name="email" id="email" aria-describedby="emailHelp" placeholder="Enter email" value="{{ user['email'] }}">
+        <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else or send unsolicited emails.</small>
+      </div>
+      <div class="form-group">
+        <label for="gender">Gender</label>
+        <select required class="form-control" id="gender" name="gender">
+          {% for option in gender_opts %}
+            <option {% if option == user['gender'] %} selected {% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ethnicity">Ethnicity</label>
+        <select required class="form-control" id="ethnicity" name="ethnicity">
+          {% for option in ethnicity_opts %}
+            <option {% if option == user['ethnicity'] %} selected {% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="career_stage">Career stage</label>
+        <select required class="form-control" id="career_stage" name="career_stage">
+          {% for option in career_opts %}
+            <option {% if option == user['career_stage'] %} selected {% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="highest_education">Highest education</label>
+        <select required class="form-control" id="highest_education" name="highest_education">
+          {% for option in education_opts %}
+            <option {% if option == user['highest_education'] %} selected {% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <br/><br/><input class="btn btn-primary" name="save" type="submit" value="Save">
+    </form>
+{% endblock %}

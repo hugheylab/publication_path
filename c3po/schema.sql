@@ -162,3 +162,8 @@ CREATE TABLE IF NOT EXISTS orcid_keys (
   client_secret TEXT,
   read_public_key TEXT
 );
+
+CREATE TABLE IF NOT EXISTS user_papers (
+  orcid_id TEXT PRIMARY KEY,
+  dois TEXT[]
+);

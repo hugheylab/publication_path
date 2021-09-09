@@ -46,9 +46,9 @@ def get_login_access_token(code, db, app_key):
         values = (r.json()['access_token'], r.json()['refresh_token'], r.json()['scope'], r.text, r.json()['orcid'], r.json()['scope'])
         pg_query(db, 'update', sql, values)
     else:
-        sql = ''' INSERT INTO user_orcid(orcid_id, orcid_access_token, orcid_refresh_token, orcid_name, orcid_scope, raw_text)
-            VALUES(%s, %s, %s, %s, %s, %s) '''
-        values = (r.json()['orcid'], r.json()['access_token'], r.json()['refresh_token'], r.json()['name'], r.json()['scope'], r.text)
+        sql = ''' INSERT INTO user_orcid(orcid_id, orcid_access_token, orcid_refresh_token, orcid_name, orcid_scope, raw_text, full_name)
+            VALUES(%s, %s, %s, %s, %s, %s, %s) '''
+        values = (r.json()['orcid'], r.json()['access_token'], r.json()['refresh_token'], r.json()['name'], r.json()['scope'], r.text, r.json()['name'])
         # cur = db.cursor()
         # cur.execute(sql, email_url_tmp)
         # db.commit()

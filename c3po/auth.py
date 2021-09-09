@@ -38,6 +38,44 @@ def register():
         db.close()
         return(render_template('auth/register.html', orcid_link = orcid_link))
 
+@bp.route('/initialize', methods=('GET', 'POST'))
+def initialize():
+    if g.user['full_name'] == None:
+        g.user['full_name'] = ''
+    if g.user['email'] == None:
+        g.user['email'] = ''
+    if g.user['gender'] == None:
+        g.user['gender'] = ''
+    if g.user['ethnicity'] == None:
+        g.user['ethnicity'] = ''
+    if g.user['career_stage'] == None:
+        g.user['career_stage'] = ''
+    if g.user['highest_education'] == None:
+        g.user['highest_education'] = ''
+    gender_opts = ['', 'Female', 'Male', 'Non-Binary', 'Other', 'Prefer not to answer']
+    ethnicity_opts = ['', 'American Indian or Alaska Native', 'Asian',
+        'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander',
+        'White', 'Other', 'Prefer not to answer']
+    career_opts = ['', 'Undergraduate', 'Graduate student', 'Postdoctoral scholar',
+        'Principal investigator', 'Research staff', 'Other', 'Prefer not to answer']
+    education_opts = ['', 'High School', 'Bachelors', 'Masters', 'PHD', 'Other',
+    'Prefer not to answer']
+    if request.method == 'POST' and 'save' in request.form:
+        db = get_db()
+        query = (
+            'UPDATE user_orcid SET full_name = %s, email = %s, gender = %s, '
+            'ethnicity = %s, career_stage = %s, highest_education = %s, '
+            'initialized = true '
+            'WHERE orcid_id = %s;')
+        values = (request.form['full_name'], request.form['email'], request.form['gender'],
+        request.form['ethnicity'], request.form['career_stage'], request.form['highest_education'],
+        g.user['orcid_id'])
+        pg_query(db, 'insert', query, values)
+        db.close()
+        return(redirect(url_for('home.landing')))
+    
+    return(render_template('auth/initialize.html', user = g.user, gender_opts = gender_opts, ethnicity_opts = ethnicity_opts, career_opts = career_opts, education_opts = education_opts))
+
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
@@ -60,8 +98,11 @@ def login_required(view):
     def wrapped_view(**kwargs):
         if g.user is None:
             return redirect(url_for('auth.register'))
-
-        return view(**kwargs)
+        else:
+            if g.user['initialized']:
+                return view(**kwargs)
+            else:
+                return redirect(url_for('auth.initialize'))
 
     return wrapped_view
 
