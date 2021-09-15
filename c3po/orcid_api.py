@@ -60,6 +60,7 @@ def get_user_works(orcid, app_key):
         db = get_db()
         app_key = get_app_info(db)
         db.close()
+        db = None
     url = public_base_url + orcid +'/record'
     headers = { 'Authorization' : 'Bearer ' + app_key['read_public_key'],
      'Accept' : accept }

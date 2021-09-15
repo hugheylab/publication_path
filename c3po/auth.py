@@ -63,11 +63,11 @@ def initialize():
     if request.method == 'POST' and 'save' in request.form:
         db = get_db()
         query = (
-            'UPDATE user_orcid SET full_name = %s, email = %s, gender = %s, '
+            'UPDATE user_orcid SET email = %s, gender = %s, '
             'ethnicity = %s, career_stage = %s, highest_education = %s, '
             'initialized = true '
             'WHERE orcid_id = %s;')
-        values = (request.form['full_name'], request.form['email'], request.form['gender'],
+        values = (request.form['email'], request.form['gender'],
         request.form['ethnicity'], request.form['career_stage'], request.form['highest_education'],
         g.user['orcid_id'])
         pg_query(db, 'insert', query, values)
@@ -86,7 +86,6 @@ def load_logged_in_user():
         db = get_db()
         g.user = pg_query(db, 'fetchone', 'SELECT * FROM user_orcid WHERE orcid_id = \'' + user_id + '\';', ())
         close_db()
-        db.close()
 
 @bp.route('/logout')
 def logout():

@@ -100,14 +100,24 @@ CREATE TABLE If NOT EXISTS email_url (
   completed_timestamp TIMESTAMP
 );
 
+CREATE TABLE If NOT EXISTS path_entry_event (
+  id SERIAL PRIMARY KEY,
+  user_orcid TEXT NOT NULL,
+  doi TEXT NOT NULL,
+  revision INTEGER NOT NULL,
+  author_id INTEGER,
+  author_name TEXT,
+  completed_timestamp TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS paper_path (
   id SERIAL PRIMARY KEY,
   step INTEGER NOT NULL,
   submission_date DATE,
   journal TEXT NOT NULL,
   peer_review TEXT,
-  url_param_id TEXT NOT NULL,
-  FOREIGN KEY (url_param_id) REFERENCES email_url (url_param_id)
+  path_entry_event TEXT NOT NULL,
+  FOREIGN KEY (path_entry_event) REFERENCES path_entry_event (id)
 );
 
 CREATE TABLE journal_name (

@@ -204,6 +204,8 @@ def add_email(email, doi):
     db.commit()
     db.close()
 
+@click.command('get-orcid-token')
+@with_appcontext
 def get_orcid_read_token(token_url = 'https://orcid.org/oauth/token'):
     db = get_db()
     app_key = get_orcid_app_info(db)
