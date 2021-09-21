@@ -32,7 +32,7 @@
     <form method="post">
         <table style="width:100%;border-spacing: 0px;">
         <tr>
-            <td style="width: 75%; border-bottom: 1px solid black;vertical-align: top;">
+            <td colspan="2" style="width: 100%; border-bottom: 1px solid black;vertical-align: top;">
             <!--<b>Article Information</b>-->
             <b>Instructions </b>
             <ul>
@@ -45,7 +45,7 @@
         </tr>
         {% for article_info in article_infos %}
             <tr>
-            <td style="width: 100%; border-bottom: 1px solid black;">
+            <td style="width: 80%; border-bottom: 1px solid black;">
                 <b>{{ article_info.article.title }}</b><br/>
                 <input type="hidden" name="{{article_info.article.doi + '---link_author_sel'}}" id="{{article_info.article.doi + '---link_author_sel'}}" />
                 {% for author in article_info.authors %}
@@ -66,6 +66,9 @@
                     PMID:&nbsp;{{ article_info.article.pmid }}<br/>
                 </div>
                 </div><br/><br/>
+            </td>
+            <td style="width: 20%; border-bottom: 1px solid black;">
+                <a class="btn btn-primary" href="{{ url_for('enter.path', doi=article_info.article.doi.replace('/', '%2F')) }}">Enter Path Information</a>
             </td>
             </tr>
         {% endfor %}
