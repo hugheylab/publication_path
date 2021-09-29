@@ -122,7 +122,7 @@ $(document).ready(function ()
       <h5 class="card-title">{{ article_info.title }}</h5>
       <h6 class="card-subtitle mb-2 text-muted">
         {% for author in author_doi %}
-            {{author.author['author_name']}}{% if not loop.last %},{% endif %}
+        {{author.author['author_name']}}{% if not loop.last %},{% endif %}
         {% endfor %}<br/>
         {{ article_info.journal_name }}, {{ article_info.pub_date }}<br/>
         DOI:&nbsp;{{ article_info.doi }}
@@ -172,6 +172,13 @@ $(document).ready(function ()
     </table>
   {% endif %}<br/>
   <form id="package_form" action="" method="post">
+    {%if (error == '') and show_error %}<p style="color:red">ERROR:&nbsp;{{ error }}</p>{% endif %}<br/>
+    {% for author in author_doi %}
+    <input type="radio" id="{{author.author['id']}}" name="link_author_sel" value="{{author.author['id']}}"
+      {% if link_author_sel|string == author.author['id']|string %} checked {% endif %}>
+    <label for="{{author.author['id']}}">{{author.author['author_name']}}</label>
+    {% if not loop.last %},{% endif %}
+    {% endfor %}<br/>
     <table style="width:100%;">
       <tr>
         {% if confirm == False %}

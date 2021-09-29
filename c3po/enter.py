@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import date
 import psycopg2
 from psycopg2.extras import DictCursor
+import sys
 
 
 from flask import (
@@ -236,6 +237,8 @@ def path(doi):
     db = get_db()
 
     allow_enter = True
+    link_author_sel = ''
+    error = ''
     # cur.execute(
     #     'SELECT * FROM email_url WHERE url_param_id = %s', (url_id,)
     # )
@@ -284,6 +287,7 @@ def path(doi):
     journal_opts = pg_query(db, 'fetchall', 'SELECT * FROM journal_name ORDER BY journal_name ASC', ())
     
     confirm = False
+    show_error = False
     
 
 
@@ -297,6 +301,7 @@ def path(doi):
         print(request.form)
         print(request.form.getlist('journal'))
 
+        link_author_sel = request.form.get('link_author_sel')
         idxs = request.form.getlist('idx')
         steps = request.form.getlist('step')
         journals = request.form.getlist('journal')
@@ -377,29 +382,36 @@ def path(doi):
             final_path["step"] = final_path["step"] + 1
             path_list_tmp.append(final_path)
         elif 'submit' in request.form:
+            error = ''
+            if link_author_sel is None or link_author_sel == '':
+                show_error = True
+                error = 'You must select which author you are filling out the path as. '
             if last == -1:
-                error = 'You must have at least one item before submitting.'
+                error = error + 'You must have at least one item before submitting.'
             elif has_error == True:
-                error = 'Errors in form, please review and fix issues.'
+                error = error + 'Errors in form, please review and fix issues.'
             else:
                 confirm = True
         elif 'confirm' in request.form:
-            author_id = request.form['link_author_sel']
-            author_sel = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id = %s ', (author_id))
+            author_id = link_author_sel
+            print(author_id)
+            author_sel = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id = ' + str(author_id) + ';', ())
             sql = ''' INSERT INTO path_entry_event(user_orcid,doi,revision,author_id,author_name,completed_timestamp)
-                VALUES (%s,%s, , ,%s, %s); '''
+                VALUES (%s,%s, 1, ''' + str(author_id) + ''',%s, %s); '''
             cur = db.cursor()
-            cur.execute(sql, (datetime.now()))
-            paper_path_entry_id = 1
+            cur.execute(sql, (g.user['orcid_id'], doi, '', datetime.now()))
+            db.commit()
+            paper_path_entry = pg_query(db, 'fetchone', 'SELECT * FROM path_entry_event WHERE user_orcid = %s AND doi = %s ORDER BY completed_timestamp DESC LIMIT 1', (g.user['orcid_id'], doi))
+            paper_path_entry_id = paper_path_entry['id']
             for path_item in path_list_tmp:
-                sql = ''' INSERT INTO paper_path(step,submission_date,journal,peer_review)
-                    VALUES(%s,%s,%s,%s, ''' + paper_path_entry_id + ''') '''
+                sql = ''' INSERT INTO paper_path(step,submission_date,journal,peer_review,path_entry_event)
+                    VALUES(%s,%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
                 cur = db.cursor()
                 if path_item["submit_date"] != '':
                     cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["peer_review"]))
                 else:
-                    sql = ''' INSERT INTO paper_path(step,journal,peer_review,url_param_id)
-                    VALUES(%s,%s,%s, ''' + paper_path_entry_id + ''') '''
+                    sql = ''' INSERT INTO paper_path(step,journal,peer_review,path_entry_event)
+                    VALUES(%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
                     cur.execute(sql, (path_item["step"], path_item["journal"], path_item["peer_review"]))
                 db.commit()
                 cur.close()
@@ -424,7 +436,7 @@ def path(doi):
     
     db.close()
 
-    return render_template('enter/path.html', doi=doi, journal_opts = journal_opts, article_info = article_info, author_doi = auth_aff_list, affiliation_list = affiliation_list, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0))
+    return render_template('enter/path.html', doi=doi, journal_opts = journal_opts, article_info = article_info, author_doi = auth_aff_list, affiliation_list = affiliation_list, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0), link_author_sel = link_author_sel, error = error, show_error = show_error)
 
 class paper_path:
     def __init__(self, idx, path_entry_event, step, journal, peer_review, submit_date, error, show_error):
