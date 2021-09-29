@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS paper_path (
   submission_date DATE,
   journal TEXT NOT NULL,
   peer_review TEXT,
-  path_entry_event TEXT NOT NULL,
+  path_entry_event INTEGER NOT NULL,
   FOREIGN KEY (path_entry_event) REFERENCES path_entry_event (id)
 );
 
