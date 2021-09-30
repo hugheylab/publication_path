@@ -268,10 +268,15 @@ def add_email_command(email, doi):
 @with_appcontext
 def init_db_postgres_command():
     """Clear the existing data and create new tables."""
+    click.echo('Begin initializing the database.')
     init_db('schema.sql')
+    click.echo('Begin author and email parsing.')
     get_pg_authors_and_emails()
+    click.echo('Begin article_info parsing.')
     get_pg_article_info()
+    click.echo('Begin journals parsing.')
     get_journals()
+    click.echo('Begin orcid token request.')
     get_orcid_read_token()
     click.echo('Initialized the database.')
 
