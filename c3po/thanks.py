@@ -18,6 +18,6 @@ def thanks(thanks_type):
         text = 'Thank you for contributing your paper\'s submission path!'
 
     if request.method == 'POST':
-        return redirect(url_for('author.register'))
+        return redirect(url_for('home.landing'))
 
     return render_template('thanks.html', text = text, thanks_type = thanks_type)

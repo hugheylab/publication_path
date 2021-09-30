@@ -292,8 +292,8 @@ def path(doi):
 
 
     if request.method == 'GET' and allow_enter == True:
-        path_list_tmp = [paper_path(idx = 0, path_entry_event = None, step = 1, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__]
-        path_list_tmp.append(paper_path(idx = 1, path_entry_event = None, step = 2, journal = article_info["journal_name"], peer_review = 'Yes', submit_date = '', error = '', show_error = False).__dict__)
+        path_list_tmp = [paper_path(idx = 0, path_entry_event = None, step = 1, journal = '', peer_review = '', times_submitted = '', submit_date = '', error = '', show_error = False).__dict__]
+        path_list_tmp.append(paper_path(idx = 1, path_entry_event = None, step = 2, journal = article_info["journal_name"], peer_review = 'Yes', times_submitted = '', submit_date = '', error = '', show_error = False).__dict__)
         session["path_list"] = path_list_tmp
 
     elif request.method == 'POST' and allow_enter == True:
@@ -307,8 +307,10 @@ def path(doi):
         journals = request.form.getlist('journal')
         submit_dates = request.form.getlist('submit_date')
         peer_reviews = []
+        times_submitteds = []
         for step in steps:
             peer_reviews.append(request.form.get('peer_review' + step))
+            times_submitteds.append(request.form.get('times_submitted' + step))
         del_item = request.form.getlist('del_item')
         last = len(idxs) - 1
 
@@ -334,9 +336,9 @@ def path(doi):
                 if down_item_name in request.form:
                     down_idx = i
                 if add_item_name in request.form:
-                    path_list_tmp.append(paper_path(i + delMod + addMod, None, (i + 1) + delMod + addMod, '', '', '', '', is_submit).__dict__)
+                    path_list_tmp.append(paper_path(i + delMod + addMod, None, (i + 1) + delMod + addMod, '', '', '', '', '', is_submit).__dict__)
                     addMod = addMod + 1
-                path_item_tmp = paper_path(i + delMod + addMod, None, (i + 1) + delMod + addMod, journals[i], peer_reviews[i], submit_dates[i], '', is_submit)
+                path_item_tmp = paper_path(i + delMod + addMod, None, (i + 1) + delMod + addMod, journals[i], peer_reviews[i], times_submitteds[i], submit_dates[i], '', is_submit)
                 path_item_tmp.validate(prior_date, max_date, prev_journal)
                 prev_journal = path_item_tmp.journal
                 if not path_item_tmp.error == '':
@@ -373,11 +375,11 @@ def path(doi):
         if 'add_item' in request.form:
             final_path = path_list_tmp.pop(len(path_list_tmp) - 1)
             if last == 0:
-                path_list_tmp = [paper_path(idx = 0, url_param_id = None, step = 1, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__]
+                path_list_tmp = [paper_path(idx = 0, url_param_id = None, step = 1, journal = '', peer_review = '', times_submitted = '', submit_date = '', error = '', show_error = False).__dict__]
             else:
                 newIdx = int(idxs[last])
                 newStep = int(steps[last])
-                path_list_tmp.append(paper_path(newIdx, None, newStep, journal = '', peer_review = '', submit_date = '', error = '', show_error = False).__dict__)
+                path_list_tmp.append(paper_path(newIdx, None, newStep, journal = '', peer_review = '', times_submitted = '', submit_date = '', error = '', show_error = False).__dict__)
             final_path["idx"] = final_path["idx"] + 1
             final_path["step"] = final_path["step"] + 1
             path_list_tmp.append(final_path)
@@ -404,15 +406,15 @@ def path(doi):
             paper_path_entry = pg_query(db, 'fetchone', 'SELECT * FROM path_entry_event WHERE user_orcid = %s AND doi = %s ORDER BY completed_timestamp DESC LIMIT 1', (g.user['orcid_id'], doi))
             paper_path_entry_id = paper_path_entry['id']
             for path_item in path_list_tmp:
-                sql = ''' INSERT INTO paper_path(step,submission_date,journal,peer_review,path_entry_event)
-                    VALUES(%s,%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
+                sql = ''' INSERT INTO paper_path(step,submission_date,journal,peer_review,times_submitted,path_entry_event)
+                    VALUES(%s,%s,%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
                 cur = db.cursor()
                 if path_item["submit_date"] != '':
-                    cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["peer_review"]))
+                    cur.execute(sql, (path_item["step"], path_item["submit_date"], path_item["journal"], path_item["peer_review"], path_item["times_submitted"]))
                 else:
-                    sql = ''' INSERT INTO paper_path(step,journal,peer_review,path_entry_event)
-                    VALUES(%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
-                    cur.execute(sql, (path_item["step"], path_item["journal"], path_item["peer_review"]))
+                    sql = ''' INSERT INTO paper_path(step,journal,peer_review,times_submitted,path_entry_event)
+                    VALUES(%s,%s,%s,%s, ''' + str(paper_path_entry_id) + ''') '''
+                    cur.execute(sql, (path_item["step"], path_item["journal"], path_item["peer_review"], path_item["times_submitted"]))
                 db.commit()
                 cur.close()
             db.close()
@@ -431,7 +433,7 @@ def path(doi):
         cur.close()
         path_list_tmp = []
         for path_list_item in path_list_entered:
-            path_list_tmp.append(paper_path(idx = (path_list_item['step'] - 1), url_param_id = url_id, step = path_list_item['step'], journal = path_list_item['journal'], submit_date = path_list_item['submission_date'], error = '', show_error = False).__dict__)
+            path_list_tmp.append(paper_path(idx = (path_list_item['step'] - 1), url_param_id = url_id, step = path_list_item['step'], journal = path_list_item['journal'], times_submitted = path_list_item['times_submitted'], submit_date = path_list_item['submission_date'], error = '', show_error = False).__dict__)
 
     
     db.close()
@@ -439,12 +441,13 @@ def path(doi):
     return render_template('enter/path.html', doi=doi, journal_opts = journal_opts, article_info = article_info, author_doi = auth_aff_list, affiliation_list = affiliation_list, confirm = confirm, allow_enter = allow_enter, completed_paths = completed_paths, has_completed = (len(completed_paths) > 0), link_author_sel = link_author_sel, error = error, show_error = show_error)
 
 class paper_path:
-    def __init__(self, idx, path_entry_event, step, journal, peer_review, submit_date, error, show_error):
+    def __init__(self, idx, path_entry_event, step, journal, peer_review, times_submitted, submit_date, error, show_error):
         self.idx = idx
         self.path_entry_event = path_entry_event
         self.step = step
         self.journal = journal
         self.peer_review = peer_review
+        self.times_submitted = times_submitted
         self.submit_date = submit_date
         self.error = error
         self.show_error = show_error
@@ -485,6 +488,8 @@ class paper_path:
             self.error = self.error + 'Journal cannot be equal to the previous journal. '
         if self.peer_review == '' or self.peer_review == None:
             self.error = self.error + 'Sent out for peer review cannot be empty. '
+        if self.times_submitted == '' or self.times_submitted == None:
+            self.error = self.error + 'Times submitted cannot be empty. '
 
 
 
