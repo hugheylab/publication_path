@@ -110,7 +110,7 @@ def get_pg_article_info():
         "insert into article_info(pmid, title, journal_name, doi, pub_date) (SELECT  "
             "pmid, title, journal_name, doi, pub_date "
         "FROM article_rank "
-        "WHERE rank_number = 1);")
+        "WHERE rank_number = 1 AND journal_name NOT LIKE '%bioRxiv%' AND journal_name NOT LIKE '%medRxiv%');")
     cur.execute(query)  # Query
 
     query2 = (
@@ -207,20 +207,30 @@ def add_email(email, doi):
 @click.command('get-orcid-token')
 @with_appcontext
 def get_orcid_read_token(token_url = 'https://orcid.org/oauth/token'):
+    print("1")
     db = get_db()
+    print("2")
     app_key = get_orcid_app_info(db)
+    print("3")
     headers = {'Accept' : 'application/json'}
+    print("4")
     data = { 
         'client_id' : app_key['client_id'],
         'client_secret' : app_key['client_secret'],
         'grant_type' : 'client_credentials',
         'scope' : '/read-public'
     }
+    print("5")
     r = requests.post(token_url, headers=headers, data=data)
+    print("6")
     sql = 'UPDATE orcid_keys SET read_public_key = %s WHERE client_id = %s;'
+    print("7")
     values = (r.json()['access_token'], app_key['client_id'])
+    print("8")
     pg_query(db, 'update', sql, values)
+    print("9")
     db.close()
+    print("10")
 
 def get_orcid_app_info(db):
     app_key = pg_query(db, 'fetchone', 'SELECT * FROM orcid_keys LIMIT 1',())
@@ -285,6 +295,7 @@ def init_app(app):
     app.cli.add_command(init_db_command)
     app.cli.add_command(init_db_postgres_command)
     app.cli.add_command(add_email_command)
+    app.cli.add_command(get_orcid_read_token)
 
 def config(filename='c3po/database.ini', section='postgresql'):
     # create a parser
