@@ -3,10 +3,8 @@
 
 {% block content %}
   <p>{{ text}}</p>
-  {% if thanks_type == "registration" %}
   <form method="post">
     <input class="btn btn-secondary" type="submit" value="Return to home page">
   </form>
-  {% endif %}
 
 {% endblock %}

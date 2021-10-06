@@ -130,53 +130,11 @@ $(document).ready(function ()
     </div>
   </div>
   {% if allow_enter == True and has_completed == True %}
-    <h4 style="color:yellowgreen">Information has already been entered for this DOI using a different URL, here is the information entered (please only submit if the information is incorrect!):</h4>
-    <table>
-      <tr>
-        <td style="width:15%;">
-          <b>Step</b>
-        </td>
-        <td style="width:30%;">
-          <b>Journal</b>
-        </td>
-        <td style="width:10%;">
-          <b>Times submitted</b>
-        </td>
-        <td style="width:10%;">
-          <b>Sent out for peer review?</b>
-        </td>
-        <td style="width:25%;">
-          <b>First submission date</b>
-        </td>
-        <td style="width:10%;">
-          &nbsp;
-        </td>
-      </tr>
-      {% for path_item in completed_paths %}
-        <tr>
-          <td>
-            {{ path_item.step }}
-          </td>
-          <td>
-            {{ path_item.journal }}
-          </td>
-          <td>
-            {{ path_item.times_submitted }}
-          </td>
-          <td>
-            {{ path_item.peer_review }}
-          </td>
-          <td>
-            {% if path_item.submission_date != NULL and path_item.submission_date != "" and path_item.submission_date != None %}
-              {{ path_item.submission_date }}
-            {% else %}
-              NA
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}<br/>
+    <h4 style="color:yellowgreen">Information has already been entered for this DOI!</h4><br/>
+  {% endif %}
+  {% if allow_enter == True and has_saved == True %}
+    <h4 style="color:yellow">Path information restored from saved progress!</h4><br/>
+  {% endif %}
   <form id="package_form" action="" method="post">
     {%if (error == '') and show_error %}<p style="color:red">ERROR:&nbsp;{{ error }}</p>{% endif %}<br/>
     {% for author in author_doi %}
@@ -242,6 +200,7 @@ $(document).ready(function ()
               </td>
             {% endif %}
             <td style="padding: 5px;">
+              <input hidden type="number" id="{{'idx' + path_item.idx|string + '---' + path_item.paper_path_id|string }}" name="paper_path_id" value="{{ path_item.paper_path_id }}" />
               <input hidden type="number" id="{{'idx' + path_item.idx|string }}" name="idx" value="{{ path_item.idx }}" />
               <input hidden type="number" id="{{'step' + path_item.step|string }}" name="step" value="{{ path_item.step }}" />
               {{ path_item.step }}
@@ -323,6 +282,9 @@ $(document).ready(function ()
         {% endfor %}
     </table><br/>
     {% if confirm == False and allow_enter == True %}
+      <div class="panel-body">
+        <input class="btn btn-outline-primary" type="submit" name="save_progress" value="Save Progress">
+      </div><br/>
       <div class="panel-body">
         <input class="btn btn-success" type="submit" name="submit" value="Submit">
       </div>

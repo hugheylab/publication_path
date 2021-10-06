@@ -104,7 +104,7 @@ CREATE TABLE If NOT EXISTS path_entry_event (
   id SERIAL PRIMARY KEY,
   user_orcid TEXT NOT NULL,
   doi TEXT NOT NULL,
-  revision INTEGER NOT NULL,
+  event_version INTEGER NOT NULL,
   author_id INTEGER,
   author_name TEXT,
   completed_timestamp TIMESTAMP
