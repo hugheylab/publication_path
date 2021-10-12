@@ -163,10 +163,10 @@ $(document).ready(function ()
           <b>Journal</b>
         </td>
         <td style="width:10%;">
-          <b>Times submitted</b>
+          <b>Total number of times submitted</b>
         </td>
         <td style="width:10%;">
-          <b>Sent out for peer review?</b>
+          <b>Sent out for peer review</b>
         </td>
         <td style="width:25%;">
           <b>First submission date</b>
@@ -228,15 +228,11 @@ $(document).ready(function ()
             </td>
             <td style="padding: 5px;">
               {% if confirm == False and allow_enter == True %}
-                <input type="radio" id="{{ 'times_submitted_1_2_' + path_item.step|string }}" name="{{ 'times_submitted' + path_item.step|string }}" value="1-2"
-                  {% if path_item.times_submitted == '1-2' %} checked {% endif %}>
-                <label for="{{ 'times_submitted_1_2_' + path_item.step|string }}">1-2</label><br/>
-                <input type="radio" id="{{ 'times_submitted_3_4_' + path_item.step|string }}" name="{{ 'times_submitted' + path_item.step|string }}" value="3-4"
-                  {% if path_item.times_submitted == '3-4' %} checked {% endif %}>
-                <label for="{{ 'times_submitted_3_4_' + path_item.step|string }}">3-4</label><br/>
-                <input type="radio" id="{{ 'times_submitted_5_' + path_item.step|string }}" name="{{ 'times_submitted' + path_item.step|string }}" value="5+"
-                  {% if path_item.times_submitted == '5+' %} checked {% endif %}>
-                <label for="{{ 'times_submitted_5_' + path_item.step|string }}">5+</label>
+                <select name="{{ 'times_submitted' + path_item.step|string }}">
+                  <option {% if path_item.times_submitted == '1' %} selected {% endif %} value="1">1</option>
+                  <option {% if path_item.times_submitted == '2' %} selected {% endif %} value="2">2</option>
+                  <option {% if path_item.times_submitted == '>=3' %} selected {% endif %} value=">=3">>=3</option>
+                </select>
               {% else %}
                 <input hidden id="{{ 'times_submitted' + path_item.step|string }}" name="{{ 'times_submitted' + path_item.step|string }}" value="{{ path_item.times_submitted }}" class="datechk">
                 {{ path_item.times_submitted }}
