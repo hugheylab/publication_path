@@ -132,9 +132,6 @@ $(document).ready(function ()
   {% if allow_enter == True and has_completed == True %}
     <h4 style="color:yellowgreen">Information has already been entered for this DOI!</h4><br/>
   {% endif %}
-  {% if allow_enter == True and has_saved == True %}
-    <h4 style="color:yellow">Path information restored from saved progress!</h4><br/>
-  {% endif %}
   <form id="package_form" action="" method="post">
     {%if (error == '') and show_error %}<p style="color:red">ERROR:&nbsp;{{ error }}</p>{% endif %}<br/>
     {% for author in author_doi %}
