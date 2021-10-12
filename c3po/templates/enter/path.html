@@ -229,6 +229,7 @@ $(document).ready(function ()
             <td style="padding: 5px;">
               {% if confirm == False and allow_enter == True %}
                 <select name="{{ 'times_submitted' + path_item.step|string }}">
+                  <option value=""></option>
                   <option {% if path_item.times_submitted == '1' %} selected {% endif %} value="1">1</option>
                   <option {% if path_item.times_submitted == '2' %} selected {% endif %} value="2">2</option>
                   <option {% if path_item.times_submitted == '>=3' %} selected {% endif %} value=">=3">>=3</option>
