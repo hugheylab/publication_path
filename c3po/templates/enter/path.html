@@ -281,19 +281,16 @@ $(document).ready(function ()
     {% if confirm == False and allow_enter == True %}
       <div class="panel-body">
         <a class="btn btn-secondary" href="/home/orcid" >Back to my papers</a>
-      </div>&nbsp;&nbsp;&nbsp;
-      <div class="panel-body">
+      &nbsp;&nbsp;&nbsp;
         <input class="btn btn-outline-primary" type="submit" name="save_progress" value="Save Progress">
-      </div>&nbsp;&nbsp;&nbsp;
-      <div class="panel-body">
+      &nbsp;&nbsp;&nbsp;
         <input class="btn btn-success" type="submit" name="submit" value="Submit">
       </div>
     {% else %}
       {% if allow_enter == True %}
         <div class="panel-body">
           <input class="btn btn-secondary" type="submit" name="cancel" value="Back">
-        </div>&nbsp;&nbsp;&nbsp;
-        <div class="panel-body">
+        &nbsp;&nbsp;&nbsp;
           <input class="btn btn-success" type="submit" name="confirm" value="Confirm">
         </div>
       {% endif %}
