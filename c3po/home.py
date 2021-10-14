@@ -87,9 +87,13 @@ def orcid():
         # authors = cur.fetchall()
         authors = pg_query(db, 'fetchall', 'SELECT * FROM author_doi WHERE id IN ' + auth_ids + ' ORDER BY author_pos ASC NULLS LAST, affiliation_pos ASC ', ())
 
-        completed_urls = pg_query(db, 'fetchall', 'SELECT * FROM email_url WHERE doi = %s and completed_timestamp IS NOT NULL ORDER BY completed_timestamp DESC LIMIT 1 ', (doi,))
+        completed_paths = pg_query(db, 'fetchall', 'SELECT * FROM path_entry_event WHERE doi = %s and completed_timestamp IS NOT NULL ORDER BY completed_timestamp DESC LIMIT 1 ', (doi,))
         
-        has_path = (completed_urls != None and len(completed_urls) > 0)
+        has_completed_path = (completed_paths != None and len(completed_paths) > 0)
+
+        in_progress_paths = pg_query(db, 'fetchall', 'SELECT * FROM path_entry_event WHERE doi = %s and completed_timestamp IS NULL ORDER BY event_version DESC LIMIT 1 ', (doi,))
+        
+        has_in_progress_path = (in_progress_paths != None and len(in_progress_paths) > 0)
 
         auth_aff_list = []
         affiliation_list = []
@@ -124,20 +128,21 @@ def orcid():
                 if not email_tmp['email'] in email_list:
                     email_list.append(email_tmp['email'])
         all_has_emails = (all_has_emails or has_emails)
-        article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list, has_path)
+        article_info_tmp = article_info(article, auth_aff_list, emails, has_emails, affiliation_list, has_in_progress_path, has_completed_path)
         article_infos.append(article_info_tmp)
         email_list.sort()
 
     return render_template('home/orcid.html', user = g.user, dois = dois, article_infos = article_infos)
 
 class article_info:
-  def __init__(self, article, authors, emails, has_emails, affiliation_list, has_path):
+  def __init__(self, article, authors, emails, has_emails, affiliation_list, has_in_progress_path, has_completed_path):
     self.article = article
     self.authors = authors
     self.emails = emails
     self.has_emails = has_emails
     self.affiliation_list = affiliation_list
-    self.has_path = has_path
+    self.has_in_progress_path = has_in_progress_path
+    self.has_completed_path = has_completed_path
 
 class author_affiliations:
     def __init__(self, author, affiliation_nums):

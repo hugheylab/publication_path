@@ -30,7 +30,7 @@
         </div>
     </div><br/><br/>
     <form method="post">
-        <table style="width:100%;border-spacing: 0px;">
+        <table id="article_table" style="width:100%;border-spacing: 0px;">
         <tr>
             <td colspan="2" style="width: 100%; border-bottom: 1px solid black;vertical-align: top;">
             <!--<b>Article Information</b>-->
@@ -40,11 +40,17 @@
                 <li>Select your name from the author list of each article for which you want to enter the submission path.</li>
                 <li>Click More information to show or hide author affiliations and article IDs.</li>
                 <li>Click Confirm to send an email to the email address you provide for each selected author.</li>
-            </ul>
+            </ul><br/>
+            <select onchange="filterTable()" name="paper_view" id="paper_view">
+                <option value="all">All</option>
+                <option value="in_progress">In progress</option>
+                <option value="incomplete">Incomplete</option>
+                <option value="complete">Complete</option>
+            </select>
             </td>
         </tr>
         {% for article_info in article_infos %}
-            <tr>
+            <tr id="{{ article_info.article.id|string + '---' + article_info.has_completed_path|string + '---' + article_info.has_in_progress_path|string }}">
             <td style="width: 80%; border-bottom: 1px solid black;">
                 <b>{{ article_info.article.title }}</b><br/>
                 <input type="hidden" name="{{article_info.article.doi + '---link_author_sel'}}" id="{{article_info.article.doi + '---link_author_sel'}}" />
@@ -54,7 +60,8 @@
                 {% endfor %}<br/>
                 <!--<button onclick="clearAuthor(this)" type="button" class="btn btn-danger" disabled name="{{article_info.article.doi + '---remove_link_author_sel'}}"  id="{{article_info.article.doi + '---remove_link_author_sel'}}">Clear selected author</button><br/><br/>-->
                 {{ article_info.article.journal_name }}, {{ article_info.article.pub_date }}<br/>
-                {% if article_info.has_path == True %}<b style="color: orange;">Path for this article has already been entered. You can send emails to re-enter the path if desired.</b><br/>{% endif %}
+                {% if article_info.has_completed_path == True %}<b style="color: orangered;">Path for this article has already been entered. You can re-enter the path if desired.</b><br/>{% endif %}
+                {% if article_info.has_in_progress_path == True %}<b style="color: orangered;">Path entry progress has been saved but not submitted for this article.</b><br/>{% endif %}
                 <button class="btn btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{loop.index}}" aria-expanded="false" aria-controls="collapse-{{loop.index}}">More information</button>
                 <div class="collapse" id="collapse-{{loop.index}}">
                 <div class="card card-body">
@@ -74,4 +81,33 @@
         {% endfor %}
         </table><br/>
     </form>
+    <script>
+        function filterTable() {
+            // Declare variables
+            var input = document.getElementById("paper_view");
+            var filter = input.value;
+            var table = document.getElementById("article_table");
+            var tr = table.getElementsByTagName("tr");
+            // Loop through all table rows, and hide those who don't match the search query
+            for (i = 0; i < tr.length; i++) {
+                if (tr[i].id.includes("---") && filter != "all") {
+                    var tr_vals = tr[i].id.split("---");
+                    var id_val = tr_vals[0];
+                    var has_completed_path = tr_vals[1].toString();
+                    var has_in_progress_path = tr_vals[2].toString();
+                    if (filter == "in_progress" && has_in_progress_path == "True") {
+                        tr[i].style.display = "";
+                    } else if (filter == "complete" && has_completed_path == "True") {
+                        tr[i].style.display = "";
+                    } else if (filter == "incomplete" && has_completed_path == "False") {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                } else {
+                    tr[i].style.display = "";
+                }
+            }
+        }
+    </script>
 {% endblock %}
