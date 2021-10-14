@@ -225,7 +225,7 @@ def path(doi):
             if link_author_sel is None or link_author_sel == '':
                 show_error = True
                 has_error = True
-                error = 'You must select which author you are filling out the path as. '
+                error = 'No author selected. '
             if last == -1:
                 error = error + 'You must have at least one item before submitting.'
             elif has_error == True:
@@ -236,7 +236,7 @@ def path(doi):
             author_id = link_author_sel
             savePathEvent(db, author_id, g.user, doi, path_list_tmp, confirm = False)
             db.close()
-            return redirect(url_for('thanks.thanks', thanks_type = 'saveprogress'))
+            return redirect(url_for('home.orcid'))
         elif 'confirm' in request.form:
             author_id = link_author_sel
             savePathEvent(db, author_id, g.user, doi, path_list_tmp, confirm = True)
